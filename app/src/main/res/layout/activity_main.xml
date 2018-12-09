@@ -18,6 +18,8 @@
             layout="@layout/toolbar_main"
             android:id="@+id/toolbar_main"/>
 
+        <include layout="@layout/content_main"/>
+
     </LinearLayout>
 
     <android.support.design.widget.NavigationView
