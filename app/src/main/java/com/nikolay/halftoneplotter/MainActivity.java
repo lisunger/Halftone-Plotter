@@ -20,11 +20,14 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
@@ -33,6 +36,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     private TextView mTextViewChooseImage;
     private ImageView mImageView;
+    private TextView mTextViewImageDetails;
+
+    private int mMenu = R.menu.menu_empty;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,7 +54,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_dither, menu);
+        getMenuInflater().inflate(mMenu, menu);
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -109,6 +115,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                         Bitmap image;
                         image = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
                         mImageView.setImageBitmap(image);
+                        mImageView.setVisibility(View.VISIBLE);
+                        mTextViewChooseImage.setVisibility(View.GONE);
+
+                        String details = String.format("%dx%d", image.getWidth(), image.getHeight());
+                        mTextViewImageDetails.setText(details);
+                        mTextViewImageDetails.setVisibility(View.VISIBLE);
+
+                        mMenu = R.menu.menu_dither;
+                        invalidateOptionsMenu();
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -165,7 +180,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private void loadUiElements() {
-        mTextViewChooseImage = findViewById(R.id.textView);
+        mTextViewChooseImage = findViewById(R.id.textLoad);
         mImageView = findViewById(R.id.image);
+        mTextViewImageDetails = findViewById(R.id.textImageDetails);
     }
 }

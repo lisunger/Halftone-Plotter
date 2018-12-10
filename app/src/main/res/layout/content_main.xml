@@ -1,21 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
-    <ImageView
-        android:id="@+id/image"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"/>
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="15">
+
+        <ImageView
+            android:id="@+id/image"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="gone"/>
+
+        <TextView
+            android:id="@+id/textLoad"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Choose image from gallery"
+            android:layout_gravity="center"/>
+
+    </FrameLayout>
 
     <TextView
-        android:id="@+id/textView"
+        android:id="@+id/textImageDetails"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Choose image from gallery"
-        android:layout_gravity="center"/>
-
-
-</FrameLayout>
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_gravity="center"
+        android:text="image details"
+        android:visibility="gone"/>
+</LinearLayout>
