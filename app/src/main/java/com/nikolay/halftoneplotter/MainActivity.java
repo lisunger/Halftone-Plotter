@@ -37,8 +37,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private TextView mTextViewChooseImage;
     private ImageView mImageView;
     private TextView mTextViewImageDetails;
-
     private int mMenu = R.menu.menu_empty;
+
+    private Bitmap mBitmapOriginal = null;
+    private Bitmap mBitmapEdited = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,7 +75,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             case R.id.action_dither_st : {
                 return true;
             }
+            case R.id.action_dither_grayscale : {
+                mBitmapEdited = Dither.grayscale(mBitmapOriginal);
+                mImageView.setImageBitmap(mBitmapEdited);
+                return true;
+            }
             case R.id.action_dither_original : {
+                mImageView.setImageBitmap(mBitmapOriginal);
                 return true;
             }
             default : {
@@ -112,18 +120,19 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 if(resultCode == RESULT_OK && data != null) {
                     Uri imageUri = data.getData();
                     try {
-                        Bitmap image;
-                        image = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
-                        mImageView.setImageBitmap(image);
+                        mBitmapOriginal = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
+                        https://android.jlelse.eu/loading-large-bitmaps-efficiently-in-android-66826cd4ad53
+                        mImageView.setImageBitmap(mBitmapOriginal);
                         mImageView.setVisibility(View.VISIBLE);
                         mTextViewChooseImage.setVisibility(View.GONE);
 
-                        String details = String.format("%dx%d", image.getWidth(), image.getHeight());
+                        String details = String.format("%dx%d", mBitmapOriginal.getWidth(), mBitmapOriginal.getHeight());
                         mTextViewImageDetails.setText(details);
                         mTextViewImageDetails.setVisibility(View.VISIBLE);
 
                         mMenu = R.menu.menu_dither;
                         invalidateOptionsMenu();
+
                     } catch (IOException e) {
                         e.printStackTrace();
                     }

@@ -22,6 +22,11 @@
         android:orderInCategory="1"
         app:showAsAction="never" />
     <item
+        android:id="@+id/action_dither_grayscale"
+        android:title="Grayscale"
+        android:orderInCategory="1"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_dither_original"
         android:title="Original"
         android:orderInCategory="1"
