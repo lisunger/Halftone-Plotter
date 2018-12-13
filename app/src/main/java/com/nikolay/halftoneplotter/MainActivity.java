@@ -3,7 +3,11 @@ package com.nikolay.halftoneplotter;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.BitmapRegionDecoder;
+import android.graphics.Matrix;
+import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.MediaStore;
@@ -26,7 +30,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
@@ -120,8 +126,19 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 if(resultCode == RESULT_OK && data != null) {
                     Uri imageUri = data.getData();
                     try {
+                        /* How to get a piece of the image */
+//                        String path = getPathFromURI(imageUri);
+//                        BitmapRegionDecoder decoder = BitmapRegionDecoder.newInstance(path, false);
+//                        mBitmapOriginal = decoder.decodeRegion(new Rect(200, 200, 450, 700), null);
+
+
+                        /* How to rotate the image */
+//                        Matrix matrix = new Matrix();
+//                        matrix.postRotate(90);
+//                        Bitmap rotatedBitmap = Bitmap.createBitmap(mBitmapOriginal, 0, 0, mBitmapOriginal.getWidth(), mBitmapOriginal.getHeight(), matrix, true);
+
+
                         mBitmapOriginal = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
-                        https://android.jlelse.eu/loading-large-bitmaps-efficiently-in-android-66826cd4ad53
                         mImageView.setImageBitmap(mBitmapOriginal);
                         mImageView.setVisibility(View.VISIBLE);
                         mTextViewChooseImage.setVisibility(View.GONE);
@@ -133,12 +150,25 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                         mMenu = R.menu.menu_dither;
                         invalidateOptionsMenu();
 
+
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                 }
             }
         }
+    }
+
+    public String getPathFromURI(Uri contentUri) {
+        String res = null;
+        String[] proj = {MediaStore.Images.Media.DATA};
+        Cursor cursor = getContentResolver().query(contentUri, proj, null, null, null);
+        if (cursor.moveToFirst()) {
+            int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+            res = cursor.getString(column_index);
+        }
+        cursor.close();
+        return res;
     }
 
     @Override
