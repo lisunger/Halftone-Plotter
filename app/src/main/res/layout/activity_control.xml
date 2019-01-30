@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ControlActivity">
+
+    <include
+        android:id="@+id/toolbar_main"
+        layout="@layout/toolbar_main" />
+
+
+    <com.nikolay.halftoneplotter.ControlButton
+        android:id="@+id/btn_step_left"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_marginStart="16dp"
+        android:backgroundTint="@color/colorAccent"
+        android:elevation="3dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btn_step_up"
+        app:srcCompat="@drawable/chevron_left" />
+
+    <com.nikolay.halftoneplotter.ControlButton
+        android:id="@+id/btn_step_up"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_marginTop="16dp"
+        android:backgroundTint="@color/colorAccent"
+        android:elevation="3dp"
+        app:layout_constraintStart_toEndOf="@+id/btn_step_left"
+        app:layout_constraintTop_toBottomOf="@+id/toolbar_main"
+        app:srcCompat="@drawable/chevron_up" />
+
+    <com.nikolay.halftoneplotter.ControlButton
+        android:id="@+id/btn_step_right"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:backgroundTint="@color/colorAccent"
+        android:elevation="3dp"
+        app:layout_constraintStart_toEndOf="@+id/btn_step_up"
+        app:layout_constraintTop_toBottomOf="@+id/btn_step_up"
+        app:srcCompat="@drawable/chevron_right" />
+
+    <com.nikolay.halftoneplotter.ControlButton
+        android:id="@+id/btn_step_down"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:backgroundTint="@color/colorAccent"
+        android:elevation="3dp"
+        app:layout_constraintEnd_toStartOf="@+id/btn_step_right"
+        app:layout_constraintHorizontal_bias="0.45"
+        app:layout_constraintStart_toEndOf="@+id/btn_step_left"
+        app:layout_constraintTop_toBottomOf="@+id/btn_step_right"
+        app:srcCompat="@drawable/chevron_down" />
+
+    <com.nikolay.halftoneplotter.ControlButton
+        android:id="@+id/btn_rev_left"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:backgroundTint="@color/colorAccent"
+        android:elevation="3dp"
+        app:layout_constraintBottom_toTopOf="@+id/btn_rev_down"
+        app:layout_constraintEnd_toStartOf="@+id/btn_rev_down"
+        app:layout_constraintTop_toBottomOf="@+id/btn_rev_up"
+        app:srcCompat="@drawable/chevron_double_left" />
+
+    <com.nikolay.halftoneplotter.ControlButton
+        android:id="@+id/btn_rev_up"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_marginTop="16dp"
+        android:backgroundTint="@color/colorAccent"
+        android:elevation="3dp"
+        app:layout_constraintEnd_toStartOf="@+id/btn_rev_right"
+        app:layout_constraintTop_toBottomOf="@+id/toolbar_main"
+        app:srcCompat="@drawable/chevron_double_up" />
+
+    <com.nikolay.halftoneplotter.ControlButton
+        android:id="@+id/btn_rev_right"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_marginEnd="16dp"
+        android:backgroundTint="@color/colorAccent"
+        android:elevation="3dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btn_rev_up"
+        app:srcCompat="@drawable/chevron_double_right" />
+
+    <com.nikolay.halftoneplotter.ControlButton
+        android:id="@+id/btn_rev_down"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:backgroundTint="@color/colorAccent"
+        android:elevation="3dp"
+        app:layout_constraintEnd_toStartOf="@+id/btn_rev_right"
+        app:layout_constraintTop_toBottomOf="@+id/btn_rev_right"
+        app:srcCompat="@drawable/chevron_double_down" />
+
+    <TextView
+        android:id="@+id/textView3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Move a step"
+        app:layout_constraintEnd_toEndOf="@+id/btn_step_down"
+        app:layout_constraintStart_toStartOf="@+id/btn_step_down"
+        app:layout_constraintTop_toBottomOf="@+id/btn_step_down" />
+
+    <TextView
+        android:id="@+id/textView4"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Move a revolution"
+        app:layout_constraintEnd_toEndOf="@+id/btn_rev_down"
+        app:layout_constraintStart_toStartOf="@+id/btn_rev_down"
+        app:layout_constraintTop_toBottomOf="@+id/btn_rev_down" />
+
+    <TextView
+        android:id="@+id/textViewCoords"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        android:ellipsize="end"
+        android:maxLines="2"
+        android:text="Choose starting coordinate"
+        app:layout_constraintBottom_toTopOf="@+id/floatingActionButton"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toEndOf="@+id/button2" />
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/floatingActionButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:srcCompat="@drawable/fountain_pen_tip" />
+
+    <Button
+        android:id="@+id/button2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginBottom="8dp"
+        android:backgroundTint="@color/colorAccent"
+        android:elevation="3dp"
+        android:text="Get coordinates"
+        app:layout_constraintBottom_toBottomOf="@+id/textViewCoords"
+        app:layout_constraintHorizontal_chainStyle="spread_inside"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/textViewCoords" />
+
+
+</android.support.constraint.ConstraintLayout>

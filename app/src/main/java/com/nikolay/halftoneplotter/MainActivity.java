@@ -1,39 +1,32 @@
 package com.nikolay.halftoneplotter;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.BitmapRegionDecoder;
-import android.graphics.Matrix;
-import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
-import android.support.v4.content.PermissionChecker;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
@@ -43,10 +36,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private TextView mTextViewChooseImage;
     private ImageView mImageView;
     private TextView mTextViewImageDetails;
+    private FloatingActionButton mFab;
     private int mMenu = R.menu.menu_empty;
 
-    private Bitmap mBitmapOriginal = null;
-    private Bitmap mBitmapEdited = null;
+    private Uri mImageUri = null;
+    private Bitmap mBitmap = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,7 +51,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         setUpToolbars();
         loadUiElements();
-
+        loadImageIfAvailable();
     }
 
     @Override
@@ -68,32 +62,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch(item.getItemId()) {
-            case R.id.action_dither_fs : {
-                return true;
-            }
-            case R.id.action_dither_jjn : {
-                return true;
-            }
-            case R.id.action_dither_at : {
-                return true;
-            }
-            case R.id.action_dither_st : {
-                return true;
-            }
-            case R.id.action_dither_grayscale : {
-                mBitmapEdited = Dither.grayscale(mBitmapOriginal);
-                mImageView.setImageBitmap(mBitmapEdited);
-                return true;
-            }
-            case R.id.action_dither_original : {
-                mImageView.setImageBitmap(mBitmapOriginal);
-                return true;
-            }
-            default : {
-                return super.onOptionsItemSelected(item);
-            }
-        }
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
@@ -124,51 +93,16 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         switch(requestCode) {
             case RESULT_PICK : {
                 if(resultCode == RESULT_OK && data != null) {
-                    Uri imageUri = data.getData();
-                    try {
-                        /* How to get a piece of the image */
-//                        String path = getPathFromURI(imageUri);
-//                        BitmapRegionDecoder decoder = BitmapRegionDecoder.newInstance(path, false);
-//                        mBitmapOriginal = decoder.decodeRegion(new Rect(200, 200, 450, 700), null);
+                    mImageUri = data.getData();
 
-
-                        /* How to rotate the image */
-//                        Matrix matrix = new Matrix();
-//                        matrix.postRotate(90);
-//                        Bitmap rotatedBitmap = Bitmap.createBitmap(mBitmapOriginal, 0, 0, mBitmapOriginal.getWidth(), mBitmapOriginal.getHeight(), matrix, true);
-
-
-                        mBitmapOriginal = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
-                        mImageView.setImageBitmap(mBitmapOriginal);
-                        mImageView.setVisibility(View.VISIBLE);
-                        mTextViewChooseImage.setVisibility(View.GONE);
-
-                        String details = String.format("%dx%d", mBitmapOriginal.getWidth(), mBitmapOriginal.getHeight());
-                        mTextViewImageDetails.setText(details);
-                        mTextViewImageDetails.setVisibility(View.VISIBLE);
-
-                        mMenu = R.menu.menu_dither;
-                        invalidateOptionsMenu();
-
-
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    //String path = Utils.getPathFromURI(this, imageUri);
+                    //BitmapFactory.Options options = new BitmapFactory.Options();
+                    //options.inJustDecodeBounds = true;
+                    //BitmapFactory.decodeFile(path, options);
+                    loadAndSetImage();
                 }
             }
         }
-    }
-
-    public String getPathFromURI(Uri contentUri) {
-        String res = null;
-        String[] proj = {MediaStore.Images.Media.DATA};
-        Cursor cursor = getContentResolver().query(contentUri, proj, null, null, null);
-        if (cursor.moveToFirst()) {
-            int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-            res = cursor.getString(column_index);
-        }
-        cursor.close();
-        return res;
     }
 
     @Override
@@ -222,5 +156,45 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         mTextViewChooseImage = findViewById(R.id.textLoad);
         mImageView = findViewById(R.id.image);
         mTextViewImageDetails = findViewById(R.id.textImageDetails);
+        mFab = findViewById(R.id.fab);
+        mFab.setBackgroundTintList(getResources().getColorStateList(R.color.colors_fab, getTheme()));
+        mFab.setEnabled(false);
+
+        mFab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                SharedPreferences sharedPref = MainActivity.this.getPreferences(Context.MODE_PRIVATE);
+                SharedPreferences.Editor editor = sharedPref.edit();
+                editor.putString(getString(R.string.image_uri_key), mImageUri.toString());
+                editor.commit();
+
+                Intent intent = new Intent(MainActivity.this, ControlActivity.class);
+                startActivity(intent);
+            }
+        });
+    }
+
+    private void loadImageIfAvailable() {
+        if(mImageUri != null) {
+            loadAndSetImage();
+        }
+    }
+
+    private void loadAndSetImage() {
+        mBitmap = Utils.decodeImageFromUri(this, mImageUri);
+        if(mBitmap != null) {
+
+            int[] imageSize = Utils.getImageSizeFromUri(this, mImageUri);
+
+            mImageView.setImageBitmap(mBitmap);
+            mImageView.setVisibility(View.VISIBLE);
+            mTextViewChooseImage.setVisibility(View.GONE);
+
+            String details = String.format("%dx%d", imageSize[0], imageSize[1]);
+            mTextViewImageDetails.setText(details);
+            mTextViewImageDetails.setVisibility(View.VISIBLE);
+
+            mFab.setEnabled(true);
+        }
     }
 }

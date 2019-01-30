@@ -4,4 +4,10 @@
     <!-- Navigation drawer -->
     <string name="nav_open_drawer">Open navigation drawer</string>
     <string name="nav_close_drawer">Close navigation drawer</string>
+
+    <!-- SharedPreferences keys -->
+    <string name="preference_file_key">shared_preferences</string>
+    <string name="image_uri_key">key_image_uri</string>
+    <string name="coordinate_x_key">key_coord_x</string>
+    <string name="coordinate_y_key">key_y_coord</string>
 </resources>
