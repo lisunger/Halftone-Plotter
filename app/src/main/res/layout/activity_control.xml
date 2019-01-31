@@ -10,7 +10,6 @@
         android:id="@+id/toolbar_main"
         layout="@layout/toolbar_main" />
 
-
     <com.nikolay.halftoneplotter.ControlButton
         android:id="@+id/btn_step_left"
         android:layout_width="50dp"
@@ -103,7 +102,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="Move a step"
+        android:text="Move a pixel"
         app:layout_constraintEnd_toEndOf="@+id/btn_step_down"
         app:layout_constraintStart_toStartOf="@+id/btn_step_down"
         app:layout_constraintTop_toBottomOf="@+id/btn_step_down" />
@@ -118,6 +117,50 @@
         app:layout_constraintStart_toStartOf="@+id/btn_rev_down"
         app:layout_constraintTop_toBottomOf="@+id/btn_rev_down" />
 
+    <android.support.design.widget.TextInputLayout
+        android:id="@+id/textInputSteps"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView3">
+
+        <android.support.design.widget.TextInputEditText
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:enabled="false"
+            android:hint="Steps"
+            android:inputType="number"
+            android:maxLength="5" />
+    </android.support.design.widget.TextInputLayout>
+
+    <CheckBox
+        android:id="@+id/checkBoxPrecise"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:checked="false"
+        android:focusedByDefault="false"
+        android:text="Precise number"
+        app:layout_constraintBottom_toBottomOf="@+id/textInputSteps"
+        app:layout_constraintStart_toEndOf="@+id/textInputSteps"
+        app:layout_constraintTop_toTopOf="@+id/textInputSteps" />
+
+    <Button
+        android:id="@+id/buttonGetCoordinates"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginBottom="8dp"
+        android:backgroundTint="@color/colorAccent"
+        android:elevation="3dp"
+        android:text="Get coordinates"
+        app:layout_constraintBottom_toBottomOf="@+id/textViewCoords"
+        app:layout_constraintHorizontal_chainStyle="spread_inside"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/textViewCoords" />
+
     <TextView
         android:id="@+id/textViewCoords"
         android:layout_width="200dp"
@@ -131,7 +174,7 @@
         app:layout_constraintBottom_toTopOf="@+id/floatingActionButton"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toEndOf="@+id/button2" />
+        app:layout_constraintStart_toEndOf="@+id/buttonGetCoordinates" />
 
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/floatingActionButton"
@@ -143,19 +186,47 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:srcCompat="@drawable/fountain_pen_tip" />
 
-    <Button
-        android:id="@+id/button2"
+    <TextView
+        android:id="@+id/textView2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
-        android:layout_marginBottom="8dp"
-        android:backgroundTint="@color/colorAccent"
-        android:elevation="3dp"
-        android:text="Get coordinates"
-        app:layout_constraintBottom_toBottomOf="@+id/textViewCoords"
-        app:layout_constraintHorizontal_chainStyle="spread_inside"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/textViewCoords" />
+        android:layout_marginBottom="16dp"
+        android:text="X:"
+        app:layout_constraintBottom_toTopOf="@+id/buttonGetCoordinates"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/textView5"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:text="Y:"
+        app:layout_constraintBottom_toBottomOf="@+id/editTextX"
+        app:layout_constraintStart_toEndOf="@+id/editTextX"
+        app:layout_constraintTop_toTopOf="@+id/editTextX" />
+
+    <EditText
+        android:id="@+id/editTextX"
+        android:layout_width="100dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:ems="10"
+        android:inputType="number"
+        app:layout_constraintBottom_toBottomOf="@+id/textView2"
+        app:layout_constraintStart_toEndOf="@+id/textView2"
+        app:layout_constraintTop_toTopOf="@+id/textView2" />
+
+    <EditText
+        android:id="@+id/editTextY"
+        android:layout_width="100dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:ems="10"
+        android:inputType="number"
+        app:layout_constraintBottom_toBottomOf="@+id/textView5"
+        app:layout_constraintStart_toEndOf="@+id/textView5"
+        app:layout_constraintTop_toTopOf="@+id/textView5" />
 
 
 </android.support.constraint.ConstraintLayout>
