@@ -40,6 +40,10 @@ public class ControlActivity extends AppCompatActivity {
         ((ControlButton)findViewById(R.id.btn_rev_up)).setSteps(REV_UP);
         ((ControlButton)findViewById(R.id.btn_rev_right)).setSteps(REV_RIGHT);
         ((ControlButton)findViewById(R.id.btn_rev_down)).setSteps(REV_DOWN);
+
+        findViewById(R.id.button_connect).setActivated(true);
+        findViewById(R.id.button_connect2).setActivated(false);
+        findViewById(R.id.button_connect3).setEnabled(false);
     }
 
 }
