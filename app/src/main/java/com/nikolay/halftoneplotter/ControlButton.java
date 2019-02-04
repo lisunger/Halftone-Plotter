@@ -9,12 +9,12 @@ public class ControlButton extends android.support.v7.widget.AppCompatImageButto
 
     public ControlButton(Context context) {
         super(context);
-        this.setBackgroundTintList(getResources().getColorStateList(R.color.colors_fab, getContext().getTheme()));
+        this.setBackgroundTintList(getResources().getColorStateList(R.color.colors_enable, getContext().getTheme()));
     }
 
     public ControlButton(Context context, AttributeSet attrs) {
         super(context, attrs);
-        this.setBackgroundTintList(getResources().getColorStateList(R.color.colors_fab, getContext().getTheme()));
+        this.setBackgroundTintList(getResources().getColorStateList(R.color.colors_enable, getContext().getTheme()));
     }
 
     public Integer getSteps() {

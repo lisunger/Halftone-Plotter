@@ -155,7 +155,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         mImageView = findViewById(R.id.image);
         mTextViewImageDetails = findViewById(R.id.textImageDetails);
         mFab = findViewById(R.id.fab);
-        mFab.setBackgroundTintList(getResources().getColorStateList(R.color.colors_fab, getTheme()));
+        mFab.setBackgroundTintList(getResources().getColorStateList(R.color.colors_enable, getTheme()));
         mFab.setEnabled(false);
 
         mFab.setOnClickListener(new View.OnClickListener() {
@@ -164,7 +164,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 SharedPreferences sharedPref = MainActivity.this.getPreferences(Context.MODE_PRIVATE);
                 SharedPreferences.Editor editor = sharedPref.edit();
                 editor.putString(getString(R.string.image_uri_key), mImageUri.toString());
-                editor.commit();
+                editor.apply();
 
                 Intent intent = new Intent(MainActivity.this, ControlActivity.class);
                 startActivity(intent);
