@@ -1,9 +1,11 @@
-package com.nikolay.halftoneplotter;
+package com.nikolay.halftoneplotter.activities;
 
 import android.net.Uri;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
+
+import com.nikolay.halftoneplotter.R;
 
 public class DrawActivity extends AppCompatActivity {
 

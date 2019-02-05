@@ -1,4 +1,4 @@
-package com.nikolay.halftoneplotter;
+package com.nikolay.halftoneplotter.utils;
 
 import android.content.Context;
 import android.database.Cursor;

@@ -1,7 +1,9 @@
-package com.nikolay.halftoneplotter;
+package com.nikolay.halftoneplotter.components;
 
 import android.content.Context;
 import android.util.AttributeSet;
+
+import com.nikolay.halftoneplotter.R;
 
 public class ControlButton extends android.support.v7.widget.AppCompatImageButton {
 

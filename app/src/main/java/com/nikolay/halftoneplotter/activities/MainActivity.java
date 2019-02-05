@@ -1,4 +1,4 @@
-package com.nikolay.halftoneplotter;
+package com.nikolay.halftoneplotter.activities;
 
 import android.Manifest;
 import android.content.Context;
@@ -25,6 +25,9 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.nikolay.halftoneplotter.R;
+import com.nikolay.halftoneplotter.utils.Utils;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
