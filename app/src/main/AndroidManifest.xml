@@ -45,7 +45,10 @@
 
         <service
             android:name=".bluetooth.BluetoothConnectionService"
-            android:exported="false"></service>
+            android:exported="false"/>
+        <service
+            android:name=".TestService"
+            android:exported="false"/>
     </application>
 
 </manifest>

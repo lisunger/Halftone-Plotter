@@ -4,10 +4,13 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
@@ -17,6 +20,7 @@ import android.view.View;
 import android.widget.CheckBox;
 import android.widget.Toast;
 
+import com.nikolay.halftoneplotter.TestService;
 import com.nikolay.halftoneplotter.bluetooth.BluetoothStateChangeReceiver;
 import com.nikolay.halftoneplotter.bluetooth.BluetoothUtils;
 import com.nikolay.halftoneplotter.components.ControlButton;
@@ -42,6 +46,8 @@ public class ControlActivity extends AppCompatActivity {
     private BluetoothSocket mBluetoothSocket = null;
 
     private BluetoothDevice mHc05device = null;
+    private TestService mTestService = null;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,13 +77,19 @@ public class ControlActivity extends AppCompatActivity {
         BluetoothUtils.registerBluetoothStateReceiver(this, mBluetoothStateBroadcastReceiver);
         BluetoothUtils.registerConnectionStateReceiver(this, mConnectionStateReceiver);
         BluetoothUtils.registerBluetoothDeviceReceiver(this, mDeviceFoundReceiver);
+
+        Intent intent = new Intent(this, TestService.class);
+        startService(intent);
+        bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
     }
+
 
     @Override
     protected void onResume() {
         super.onResume();
         // TODO check the UI, connection etc.
     }
+
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
@@ -107,6 +119,7 @@ public class ControlActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        Log.d("Lisko", "ControlActivity destroyed");
         unregisterReceiver(mBluetoothStateBroadcastReceiver);
         unregisterReceiver(mConnectionStateReceiver);
         unregisterReceiver(mDeviceFoundReceiver);
@@ -117,10 +130,10 @@ public class ControlActivity extends AppCompatActivity {
 
         try {
             mBluetoothSocket = mHc05device.createRfcommSocketToServiceRecord(BluetoothUtils.PLOTTER_UUID);
-            mService.setBluetoothSocket(mBluetoothSocket);
-            Intent intent = new Intent(this, StartConnectionService.class);
-            startService(intent);
-            bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+            //mService.setBluetoothSocket(mBluetoothSocket);
+            //Intent intent = new Intent(this, StartConnectionService.class);
+            //startService(intent);
+            //bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
 
         } catch (IOException e) {
             Log.d(TAG, "Cannot open socket.");
@@ -134,6 +147,8 @@ public class ControlActivity extends AppCompatActivity {
         setButtonColors();
         enableUI(false);
         setClickListeners();
+
+        findViewById(R.id.btn_test).setEnabled(false);
     }
 
     private void enableUI(boolean enable) {
@@ -166,8 +181,8 @@ public class ControlActivity extends AppCompatActivity {
                 }
                 else { //start connecting
                     if (mBluetoothAdapter.isEnabled()) {
-                        Log.d(TAG, "Should I scan or should I go now?");
                         if (!mScanning) {
+                            Log.d(TAG, "Should I scan or should I go now?");
                             mScanStartedByApp = true;
                             mBluetoothAdapter.startDiscovery();
                         }
@@ -217,6 +232,15 @@ public class ControlActivity extends AppCompatActivity {
 
                 Intent intent = new Intent(ControlActivity.this, DrawActivity.class);
                 startActivity(intent);
+            }
+        });
+
+
+        findViewById(R.id.btn_test).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //mTestService.logNumber((int)(Math.random() * 100));
+                unbindService(mConnection);
             }
         });
     }
@@ -325,6 +349,21 @@ public class ControlActivity extends AppCompatActivity {
                     case BluetoothDevice.ACTION_BOND_STATE_CHANGED: { /* A device paired/unpaired */ }
                 }
             }
+        }
+    };
+
+    private ServiceConnection mConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            TestService.LocalBinder binder = (TestService.LocalBinder) service;
+            mTestService = binder.getService();
+            Log.d(TAG, "bound to service");
+            findViewById(R.id.btn_test).setEnabled(true);
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            Log.d(TAG, "service disconnected");
         }
     };
 }
