@@ -30,6 +30,7 @@ import com.nikolay.halftoneplotter.R;
 import com.nikolay.halftoneplotter.bluetooth.BluetoothCommands;
 
 import java.io.IOException;
+import java.util.ResourceBundle;
 
 public class ControlActivity extends AppCompatActivity implements BluetoothResponseListener {
 
@@ -86,7 +87,12 @@ public class ControlActivity extends AppCompatActivity implements BluetoothRespo
     protected void onResume() {
         super.onResume();
         // TODO check the UI, connection etc.
-
+        if(mConnected) {
+            enableUI(true);
+        }
+        else {
+            enableUI(false);
+        }
     }
 
 
@@ -131,6 +137,8 @@ public class ControlActivity extends AppCompatActivity implements BluetoothRespo
             startService(intent);
             bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
             mBluetoothService.setBluetoothSocket(mHc05device.createRfcommSocketToServiceRecord(BluetoothUtils.PLOTTER_UUID));
+            Intent broadcast = new Intent(BluetoothUtils.ACTION_HC05_CONNECTED);
+            sendBroadcast(broadcast);
         } catch (IOException e) {
             Log.d(TAG, "Cannot open socket.");
             e.printStackTrace();
@@ -143,6 +151,7 @@ public class ControlActivity extends AppCompatActivity implements BluetoothRespo
         setButtonColors();
         enableUI(false);
         setClickListeners();
+        findViewById(R.id.overlay).setVisibility(View.GONE);
     }
 
     private void enableUI(boolean enable) {
@@ -163,14 +172,17 @@ public class ControlActivity extends AppCompatActivity implements BluetoothRespo
     }
 
     private void setClickListeners() {
-        // TODO connect button
+        // Connect button
         findViewById(R.id.btn_connect).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if(mConnected) { //disconnect
                     Log.d(TAG, "Bluetooth unplugged");
                     ControlActivity.this.unbindService(mConnection);
+                    unbindService(mConnection);
                     stopService(new Intent(ControlActivity.this, BluetoothConnectionService.class));
+                    Intent broadcast = new Intent(BluetoothUtils.ACTION_HC05_DISCONNECTED);
+                    sendBroadcast(broadcast);
                 }
                 else { //start connecting
                     if (mBluetoothAdapter.isEnabled()) {
@@ -274,12 +286,17 @@ public class ControlActivity extends AppCompatActivity implements BluetoothRespo
                 switch (action) {
                     case BluetoothStateChangeReceiver.ACTION_BLUETOOTH_STARTED: {
                         Log.d(TAG, "You start me up");
+                        findViewById(R.id.btn_connect).setEnabled(true);
                         break;
                     }
                     case BluetoothStateChangeReceiver.ACTION_BLUETOOTH_STOPPED: {
                         Log.d(TAG, "Don't stop me now!");
-                        // TODO stop service, disable button ...
-                        // stopService(new Intent(context, StartConnectionService.class));
+                        if(mConnected) {
+                            unbindService(mConnection);
+                        }
+                        stopService(new Intent(ControlActivity.this, BluetoothConnectionService.class));
+                        enableUI(false);
+                        findViewById(R.id.btn_connect).setEnabled(false);
                         break;
                     }
                 }
@@ -295,13 +312,13 @@ public class ControlActivity extends AppCompatActivity implements BluetoothRespo
             switch (action) {
                 case BluetoothUtils.ACTION_HC05_CONNECTED: {
                     mConnected = true;
-                    // TODO enable UI controls
-                    // TODO remove load indicator
+                    enableUI(true);
+                    ControlActivity.this.findViewById(R.id.overlay).setVisibility(View.GONE);
                     break;
                 }
                 case BluetoothUtils.ACTION_HC05_DISCONNECTED: {
                     mConnected = false;
-                    // TODO disable UI controls
+                    enableUI(false);
                     break;
                 }
             }
@@ -331,7 +348,7 @@ public class ControlActivity extends AppCompatActivity implements BluetoothRespo
                         if(mScanStartedByApp) {
                             Log.d(TAG, "Scan started");
                             mScanning = true;
-                            // TODO enable UI loading indicator
+                            findViewById(R.id.overlay).setVisibility(View.VISIBLE);
                         }
                         else {
                             mBluetoothAdapter.cancelDiscovery();
@@ -346,6 +363,7 @@ public class ControlActivity extends AppCompatActivity implements BluetoothRespo
                          */
                         mScanning = false;
                         mScanStartedByApp = false;
+                        findViewById(R.id.overlay).setVisibility(View.GONE);
                         break;
                     }
                     case BluetoothDevice.ACTION_BOND_STATE_CHANGED: { /* A device paired/unpaired */ }
