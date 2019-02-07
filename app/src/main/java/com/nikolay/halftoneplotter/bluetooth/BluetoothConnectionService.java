@@ -1,6 +1,7 @@
 package com.nikolay.halftoneplotter.bluetooth;
 
 import android.app.IntentService;
+import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.content.Context;
 import android.os.Binder;
@@ -10,6 +11,8 @@ import android.util.Log;
 public class BluetoothConnectionService extends IntentService {
 
     private IBinder mBinder = new LocalBinder();
+    private BluetoothSocket mBluetoothSocket;
+    private BluetoothResponseListener mBoundActivity;
 
     public BluetoothConnectionService() {
         super("BluetoothConnectionService");
@@ -35,5 +38,13 @@ public class BluetoothConnectionService extends IntentService {
         public BluetoothConnectionService getService() {
             return BluetoothConnectionService.this;
         }
+    }
+
+    public void setBluetoothSocket(BluetoothSocket bluetoothSocket) {
+        this.mBluetoothSocket = bluetoothSocket;
+    }
+
+    public void setBoundActivity(BluetoothResponseListener boundActivity) {
+        this.mBoundActivity = boundActivity;
     }
 }
