@@ -34,7 +34,7 @@ import java.util.ResourceBundle;
 
 public class ControlActivity extends AppCompatActivity implements BluetoothResponseListener {
 
-    private static final String TAG = "Lisko";
+    private static final String TAG = "Lisko" + ControlActivity.class.getName();
 
     private Integer mStepsX;
     private Integer mStepsY;
@@ -50,6 +50,7 @@ public class ControlActivity extends AppCompatActivity implements BluetoothRespo
 
     private BluetoothDevice mHc05device = null;
     private BluetoothConnectionService mBluetoothService = null;
+    private BluetoothSocket mSocket;
 
 
     @Override
@@ -124,7 +125,7 @@ public class ControlActivity extends AppCompatActivity implements BluetoothRespo
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        Log.d("Lisko", "ControlActivity destroyed");
+        Log.d(TAG, "ControlActivity destroyed");
         unregisterReceiver(mBluetoothStateBroadcastReceiver);
         unregisterReceiver(mConnectionStateReceiver);
         unregisterReceiver(mDeviceFoundReceiver);
@@ -133,12 +134,10 @@ public class ControlActivity extends AppCompatActivity implements BluetoothRespo
     private void connectToHc05() {
         mBluetoothAdapter.cancelDiscovery();
         try {
+            mSocket = mHc05device.createRfcommSocketToServiceRecord(BluetoothUtils.PLOTTER_UUID);
             Intent intent = new Intent(this, BluetoothConnectionService.class);
             startService(intent);
             bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
-            mBluetoothService.setBluetoothSocket(mHc05device.createRfcommSocketToServiceRecord(BluetoothUtils.PLOTTER_UUID));
-            Intent broadcast = new Intent(BluetoothUtils.ACTION_HC05_CONNECTED);
-            sendBroadcast(broadcast);
         } catch (IOException e) {
             Log.d(TAG, "Cannot open socket.");
             e.printStackTrace();
@@ -178,7 +177,6 @@ public class ControlActivity extends AppCompatActivity implements BluetoothRespo
             public void onClick(View v) {
                 if(mConnected) { //disconnect
                     Log.d(TAG, "Bluetooth unplugged");
-                    ControlActivity.this.unbindService(mConnection);
                     unbindService(mConnection);
                     stopService(new Intent(ControlActivity.this, BluetoothConnectionService.class));
                     Intent broadcast = new Intent(BluetoothUtils.ACTION_HC05_DISCONNECTED);
@@ -314,11 +312,15 @@ public class ControlActivity extends AppCompatActivity implements BluetoothRespo
                     mConnected = true;
                     enableUI(true);
                     ControlActivity.this.findViewById(R.id.overlay).setVisibility(View.GONE);
+                    // TODO change connect button to red state
+                    findViewById(R.id.btn_connect).setActivated(true);
                     break;
                 }
                 case BluetoothUtils.ACTION_HC05_DISCONNECTED: {
                     mConnected = false;
                     enableUI(false);
+                    // TODO change connect button to normal state
+                    findViewById(R.id.btn_connect).setActivated(false);
                     break;
                 }
             }
@@ -378,6 +380,8 @@ public class ControlActivity extends AppCompatActivity implements BluetoothRespo
             BluetoothConnectionService.LocalBinder binder = (BluetoothConnectionService.LocalBinder) service;
             mBluetoothService = binder.getService();
             mBluetoothService.setBoundActivity(ControlActivity.this);
+            mBluetoothService.setBluetoothSocket(mSocket);
+            mBluetoothService.connectToHc05();
             Log.d(TAG, "bound to service");
         }
 
