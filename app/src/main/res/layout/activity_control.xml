@@ -69,6 +69,17 @@
             app:srcCompat="@drawable/chevron_down" />
 
         <com.nikolay.halftoneplotter.components.ControlButton
+            android:id="@+id/btn_dot"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_marginStart="0dp"
+            android:layout_marginTop="0dp"
+            android:elevation="3dp"
+            app:layout_constraintStart_toEndOf="@+id/btn_step_left"
+            app:layout_constraintTop_toBottomOf="@+id/btn_step_up"
+            app:srcCompat="@drawable/fountain_pen_tip" />
+
+        <com.nikolay.halftoneplotter.components.ControlButton
             android:id="@+id/btn_rev_left"
             android:layout_width="50dp"
             android:layout_height="50dp"
@@ -255,6 +266,7 @@
     </android.support.constraint.ConstraintLayout>
 
     <LinearLayout
+        android:visibility="gone"
         android:id="@+id/overlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"

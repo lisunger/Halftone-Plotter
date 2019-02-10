@@ -18,16 +18,17 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".activities.ControlActivity">
+
+        <activity android:name=".activities.ControlActivity" android:parentActivityName=".activities.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".activities.DrawActivity" />
-        <activity android:name=".activities.MainActivity">
 
+        <activity android:name=".activities.DrawActivity" android:parentActivityName=".activities.ControlActivity"/>
+
+        <activity android:name=".activities.MainActivity">
             <!-- <intent-filter> -->
             <!-- <action android:name="android.intent.action.MAIN" /> -->
             <!-- <category android:name="android.intent.category.LAUNCHER" /> -->
@@ -44,10 +45,10 @@
         </receiver>
 
         <service
-            android:name=".bluetooth.BluetoothConnectionService"
+            android:name=".bluetooth.services.BluetoothConnectionService"
             android:exported="false"/>
         <service
-            android:name=".TestService"
+            android:name=".bluetooth.services.ResponseListenerService"
             android:exported="false"/>
     </application>
 

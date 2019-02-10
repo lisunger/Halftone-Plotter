@@ -11,8 +11,6 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -20,19 +18,17 @@ import android.view.View;
 import android.widget.CheckBox;
 import android.widget.Toast;
 
-import com.nikolay.halftoneplotter.TestService;
-import com.nikolay.halftoneplotter.bluetooth.BluetoothConnectionService;
-import com.nikolay.halftoneplotter.bluetooth.BluetoothResponseListener;
-import com.nikolay.halftoneplotter.bluetooth.BluetoothStateChangeReceiver;
-import com.nikolay.halftoneplotter.bluetooth.BluetoothUtils;
-import com.nikolay.halftoneplotter.components.ControlButton;
 import com.nikolay.halftoneplotter.R;
 import com.nikolay.halftoneplotter.bluetooth.BluetoothCommands;
+import com.nikolay.halftoneplotter.bluetooth.BluetoothStateChangeReceiver;
+import com.nikolay.halftoneplotter.bluetooth.BluetoothUtils;
+import com.nikolay.halftoneplotter.bluetooth.SocketContainer;
+import com.nikolay.halftoneplotter.bluetooth.services.BluetoothConnectionService;
+import com.nikolay.halftoneplotter.components.ControlButton;
 
 import java.io.IOException;
-import java.util.ResourceBundle;
 
-public class ControlActivity extends AppCompatActivity implements BluetoothResponseListener {
+public class ControlActivity extends AppCompatActivity implements BluetoothConnectionService.BluetoothResponseListener {
 
     private static final String TAG = "Lisko" + ControlActivity.class.getName();
 
@@ -81,6 +77,8 @@ public class ControlActivity extends AppCompatActivity implements BluetoothRespo
         BluetoothUtils.registerBluetoothStateReceiver(this, mBluetoothStateBroadcastReceiver);
         BluetoothUtils.registerConnectionStateReceiver(this, mConnectionStateReceiver);
         BluetoothUtils.registerBluetoothDeviceReceiver(this, mDeviceFoundReceiver);
+
+        SocketContainer.setBluetoothSocket(null);
     }
 
 
@@ -98,7 +96,7 @@ public class ControlActivity extends AppCompatActivity implements BluetoothRespo
 
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
             case BluetoothUtils.REQUEST_ENABLE_BT: {
                 if (resultCode == RESULT_OK) {
@@ -135,6 +133,7 @@ public class ControlActivity extends AppCompatActivity implements BluetoothRespo
         mBluetoothAdapter.cancelDiscovery();
         try {
             mSocket = mHc05device.createRfcommSocketToServiceRecord(BluetoothUtils.PLOTTER_UUID);
+            SocketContainer.setBluetoothSocket(mSocket);
             Intent intent = new Intent(this, BluetoothConnectionService.class);
             startService(intent);
             bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
@@ -146,7 +145,9 @@ public class ControlActivity extends AppCompatActivity implements BluetoothRespo
     }
 
     private void setUpUi() {
-        setButtonsSteps();
+        setButtonCommands();
+        setButtonSteps();
+        setButtonListeners();
         setButtonColors();
         enableUI(false);
         setClickListeners();
@@ -168,6 +169,7 @@ public class ControlActivity extends AppCompatActivity implements BluetoothRespo
         findViewById(R.id.btn_rev_up).setEnabled(enable);
         findViewById(R.id.btn_rev_right).setEnabled(enable);
         findViewById(R.id.btn_rev_down).setEnabled(enable);
+        findViewById(R.id.btn_dot).setEnabled(enable);
     }
 
     private void setClickListeners() {
@@ -216,7 +218,7 @@ public class ControlActivity extends AppCompatActivity implements BluetoothRespo
                     findViewById(R.id.btn_rev_right).setEnabled(true);
                     findViewById(R.id.btn_rev_down).setEnabled(true);
                     mUsingPixels = false;
-                    setButtonsSteps();
+                    setButtonSteps();
                 }
             }
         });
@@ -246,7 +248,21 @@ public class ControlActivity extends AppCompatActivity implements BluetoothRespo
 
     }
 
-    private void setButtonsSteps() {
+    private void setButtonCommands() {
+        ((ControlButton)findViewById(R.id.btn_step_left)).setCommand(BluetoothCommands.COMMAND_LEFT);
+        ((ControlButton)findViewById(R.id.btn_step_up)).setCommand(BluetoothCommands.COMMAND_UP);
+        ((ControlButton)findViewById(R.id.btn_step_right)).setCommand(BluetoothCommands.COMMAND_RIGHT);
+        ((ControlButton)findViewById(R.id.btn_step_down)).setCommand(BluetoothCommands.COMMAND_DOWN);
+
+        ((ControlButton)findViewById(R.id.btn_rev_left)).setCommand(BluetoothCommands.COMMAND_LEFT);
+        ((ControlButton)findViewById(R.id.btn_rev_up)).setCommand(BluetoothCommands.COMMAND_UP);
+        ((ControlButton)findViewById(R.id.btn_rev_right)).setCommand(BluetoothCommands.COMMAND_RIGHT);
+        ((ControlButton)findViewById(R.id.btn_rev_down)).setCommand(BluetoothCommands.COMMAND_DOWN);
+
+        ((ControlButton)findViewById(R.id.btn_dot)).setCommand(BluetoothCommands.COMMAND_DOT);
+    }
+
+    private void setButtonSteps() {
         ((ControlButton)findViewById(R.id.btn_step_left)).setSteps(BluetoothCommands.VALUE_LEFT);
         ((ControlButton)findViewById(R.id.btn_step_up)).setSteps(BluetoothCommands.VALUE_UP);
         ((ControlButton)findViewById(R.id.btn_step_right)).setSteps(BluetoothCommands.VALUE_RIGHT);
@@ -256,6 +272,22 @@ public class ControlActivity extends AppCompatActivity implements BluetoothRespo
         ((ControlButton)findViewById(R.id.btn_rev_up)).setSteps(BluetoothCommands.ROTATION_BYJ);
         ((ControlButton)findViewById(R.id.btn_rev_right)).setSteps(BluetoothCommands.ROTATION_NEMA);
         ((ControlButton)findViewById(R.id.btn_rev_down)).setSteps(BluetoothCommands.ROTATION_BYJ);
+
+        ((ControlButton)findViewById(R.id.btn_dot)).setCommand(BluetoothCommands.VALUE_DOT);
+    }
+
+    private void setButtonListeners() {
+        ((ControlButton)findViewById(R.id.btn_step_left)).setOnClickListener(new ControlButtonClickListener());
+        ((ControlButton)findViewById(R.id.btn_step_up)).setOnClickListener(new ControlButtonClickListener());
+        ((ControlButton)findViewById(R.id.btn_step_right)).setOnClickListener(new ControlButtonClickListener());
+        ((ControlButton)findViewById(R.id.btn_step_down)).setOnClickListener(new ControlButtonClickListener());
+
+        ((ControlButton)findViewById(R.id.btn_rev_left)).setOnClickListener(new ControlButtonClickListener());
+        ((ControlButton)findViewById(R.id.btn_rev_up)).setOnClickListener(new ControlButtonClickListener());
+        ((ControlButton)findViewById(R.id.btn_rev_right)).setOnClickListener(new ControlButtonClickListener());
+        ((ControlButton)findViewById(R.id.btn_rev_down)).setOnClickListener(new ControlButtonClickListener());
+
+        ((ControlButton)findViewById(R.id.btn_dot)).setOnClickListener(new ControlButtonClickListener());
     }
 
     private void setButtonColors() {
@@ -264,14 +296,9 @@ public class ControlActivity extends AppCompatActivity implements BluetoothRespo
     }
 
     @Override
-    public void onReceiveCoordinates(int[] coordinates) {
-        this.mCoordX = coordinates[0];
-        this.mCoordY = coordinates[1];
-    }
-
-    @Override
-    public void onInstructionExecuted() {
+    public void onInstructionExecuted(byte[] response) {
         mIsExecuting = false;
+        // TODO read response
     }
 
     /* Listens to bluetooth turn on/off */
@@ -379,9 +406,7 @@ public class ControlActivity extends AppCompatActivity implements BluetoothRespo
         public void onServiceConnected(ComponentName name, IBinder service) {
             BluetoothConnectionService.LocalBinder binder = (BluetoothConnectionService.LocalBinder) service;
             mBluetoothService = binder.getService();
-            mBluetoothService.setBoundActivity(ControlActivity.this);
-            mBluetoothService.setBluetoothSocket(mSocket);
-            mBluetoothService.connectToHc05();
+            mBluetoothService.setBoundListener(ControlActivity.this);
             Log.d(TAG, "bound to service");
         }
 
@@ -390,4 +415,17 @@ public class ControlActivity extends AppCompatActivity implements BluetoothRespo
             Log.d(TAG, "service disconnected");
         }
     };
+
+    public class ControlButtonClickListener implements View.OnClickListener {
+
+        @Override
+        public void onClick(View v) {
+            if (!mBluetoothService.isChannelOpen()) {
+                return;
+            }
+            int steps = -1;
+
+            // TODO complete!!
+        }
+    }
 }

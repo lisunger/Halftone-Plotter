@@ -16,6 +16,7 @@ public class BluetoothUtils {
     public static final int REQUEST_ENABLE_BT = 2;
     public static final String ACTION_HC05_CONNECTED =      "com.nikolay.plottercontroller.action.CONNECTED";
     public static final String ACTION_HC05_DISCONNECTED =   "com.nikolay.plottercontroller.action.DISCONNECTED";
+    public static final String ACTION_HC05_RESPONSE =       "com.nikolay.plottercontroller.action.RESPONSE";
     public static final String HC05_MAC_ADDRESS = "00:18:E4:00:78:F9";
     public static final UUID PLOTTER_UUID = UUID.fromString("00001101-0000-1000-8000-00805f9b34fb");
 
