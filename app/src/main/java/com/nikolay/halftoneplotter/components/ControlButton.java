@@ -26,6 +26,10 @@ public class ControlButton extends android.support.v7.widget.AppCompatImageButto
         this.command = command;
     }
 
+    public int getCommand() {
+        return command;
+    }
+
     public Integer getSteps() {
         return steps;
     }

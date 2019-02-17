@@ -27,6 +27,9 @@ public class BluetoothConnectionService extends IntentService {
     private BluetoothSocket mBluetoothSocket;
     private BluetoothResponseListener mBoundListener;
     private boolean mIsChannelOpen = true;
+    private final int mDelay = 100;
+    private boolean mStopListening = false;
+    private int mCurrentCommandCode = -1;
 
     public BluetoothConnectionService() {
         super("BluetoothConnectionService");
@@ -54,24 +57,25 @@ public class BluetoothConnectionService extends IntentService {
         // Do nothing while connection is active
         while(mBluetoothSocket.isConnected()) {
             try {
-                while(readStream.available() < 4) {
-                    Thread.sleep(500);
+                while(readStream.available() < 4 && !mStopListening) {
+                    Thread.sleep(mDelay);
                 }
                 byte[] response = new byte[4];
                 readStream.read(response, 0, 4);
-                mBoundListener.onInstructionExecuted(response);
+                if(mBoundListener != null) {
+                    mBoundListener.onInstructionExecuted(mCurrentCommandCode, response);
+                }
                 mIsChannelOpen = true;
 
             } catch (IOException e) {
-                Log.d("Lisko", "Could not open input stream");
+                Log.d(TAG, "Could not open input stream");
                 stopSelf();
                 e.printStackTrace();
             } catch (InterruptedException e) {
-                Log.d("Lisko", "Bluetooth connection error");
+                Log.d(TAG, "Bluetooth connection error");
                 stopSelf();
                 e.printStackTrace();
             }
-
         }
     }
 
@@ -128,6 +132,7 @@ public class BluetoothConnectionService extends IntentService {
             try {
                 mIsChannelOpen = false;
                 OutputStream writeStream = mBluetoothSocket.getOutputStream();
+                mCurrentCommandCode = command;
 
                 // instruction beginning (four bytes)
                 writeStream.write(new byte[]{'n', 'i', 'k', 'i'});
@@ -170,6 +175,6 @@ public class BluetoothConnectionService extends IntentService {
     }
 
     public interface BluetoothResponseListener {
-        public void onInstructionExecuted(byte[] response);
+        void onInstructionExecuted(int commandCode, byte[] response);
     }
 }

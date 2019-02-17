@@ -16,6 +16,7 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import com.nikolay.halftoneplotter.R;
@@ -30,7 +31,7 @@ import java.io.IOException;
 
 public class ControlActivity extends AppCompatActivity implements BluetoothConnectionService.BluetoothResponseListener {
 
-    private static final String TAG = "Lisko" + ControlActivity.class.getName();
+    private static final String TAG = "Lisko: " + ControlActivity.class.getName();
 
     private Integer mStepsX;
     private Integer mStepsY;
@@ -81,7 +82,6 @@ public class ControlActivity extends AppCompatActivity implements BluetoothConne
         SocketContainer.setBluetoothSocket(null);
     }
 
-
     @Override
     protected void onResume() {
         super.onResume();
@@ -93,7 +93,6 @@ public class ControlActivity extends AppCompatActivity implements BluetoothConne
             enableUI(false);
         }
     }
-
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -155,7 +154,7 @@ public class ControlActivity extends AppCompatActivity implements BluetoothConne
     }
 
     private void enableUI(boolean enable) {
-        findViewById(R.id.input_steps).setEnabled(enable);
+        findViewById(R.id.input_layout_steps).setEnabled(enable);
         findViewById(R.id.input_x).setEnabled(enable);
         findViewById(R.id.input_y).setEnabled(enable);
         findViewById(R.id.fab).setEnabled(enable);
@@ -204,7 +203,7 @@ public class ControlActivity extends AppCompatActivity implements BluetoothConne
             @Override
             public void onClick(View v) {
                 if(((CheckBox) v).isChecked()) {
-                    findViewById(R.id.input_steps).setEnabled(true);
+                    findViewById(R.id.input_layout_steps).setEnabled(true);
                     findViewById(R.id.btn_rev_left).setEnabled(false);
                     findViewById(R.id.btn_rev_up).setEnabled(false);
                     findViewById(R.id.btn_rev_right).setEnabled(false);
@@ -212,7 +211,7 @@ public class ControlActivity extends AppCompatActivity implements BluetoothConne
                     mUsingPixels = true;
                 }
                 else {
-                    findViewById(R.id.input_steps).setEnabled(false);
+                    findViewById(R.id.input_layout_steps).setEnabled(false);
                     findViewById(R.id.btn_rev_left).setEnabled(true);
                     findViewById(R.id.btn_rev_up).setEnabled(true);
                     findViewById(R.id.btn_rev_right).setEnabled(true);
@@ -228,7 +227,8 @@ public class ControlActivity extends AppCompatActivity implements BluetoothConne
         findViewById(R.id.btn_coord).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
+                enableUI(false);
+                mBluetoothService.sendInstruction(BluetoothCommands.COMMAND_COORD, 0);
             }
         });
 
@@ -273,21 +273,21 @@ public class ControlActivity extends AppCompatActivity implements BluetoothConne
         ((ControlButton)findViewById(R.id.btn_rev_right)).setSteps(BluetoothCommands.ROTATION_NEMA);
         ((ControlButton)findViewById(R.id.btn_rev_down)).setSteps(BluetoothCommands.ROTATION_BYJ);
 
-        ((ControlButton)findViewById(R.id.btn_dot)).setCommand(BluetoothCommands.VALUE_DOT);
+        ((ControlButton)findViewById(R.id.btn_dot)).setSteps(0);
     }
 
     private void setButtonListeners() {
-        ((ControlButton)findViewById(R.id.btn_step_left)).setOnClickListener(new ControlButtonClickListener());
-        ((ControlButton)findViewById(R.id.btn_step_up)).setOnClickListener(new ControlButtonClickListener());
-        ((ControlButton)findViewById(R.id.btn_step_right)).setOnClickListener(new ControlButtonClickListener());
-        ((ControlButton)findViewById(R.id.btn_step_down)).setOnClickListener(new ControlButtonClickListener());
+        (findViewById(R.id.btn_step_left)).setOnClickListener(new ControlButtonClickListener());
+        (findViewById(R.id.btn_step_up)).setOnClickListener(new ControlButtonClickListener());
+        (findViewById(R.id.btn_step_right)).setOnClickListener(new ControlButtonClickListener());
+        (findViewById(R.id.btn_step_down)).setOnClickListener(new ControlButtonClickListener());
 
-        ((ControlButton)findViewById(R.id.btn_rev_left)).setOnClickListener(new ControlButtonClickListener());
-        ((ControlButton)findViewById(R.id.btn_rev_up)).setOnClickListener(new ControlButtonClickListener());
-        ((ControlButton)findViewById(R.id.btn_rev_right)).setOnClickListener(new ControlButtonClickListener());
-        ((ControlButton)findViewById(R.id.btn_rev_down)).setOnClickListener(new ControlButtonClickListener());
+        (findViewById(R.id.btn_rev_left)).setOnClickListener(new ControlButtonClickListener());
+        (findViewById(R.id.btn_rev_up)).setOnClickListener(new ControlButtonClickListener());
+        (findViewById(R.id.btn_rev_right)).setOnClickListener(new ControlButtonClickListener());
+        (findViewById(R.id.btn_rev_down)).setOnClickListener(new ControlButtonClickListener());
 
-        ((ControlButton)findViewById(R.id.btn_dot)).setOnClickListener(new ControlButtonClickListener());
+        (findViewById(R.id.btn_dot)).setOnClickListener(new ControlButtonClickListener());
     }
 
     private void setButtonColors() {
@@ -296,9 +296,31 @@ public class ControlActivity extends AppCompatActivity implements BluetoothConne
     }
 
     @Override
-    public void onInstructionExecuted(byte[] response) {
+    public void onInstructionExecuted(int commandCode, byte[] response) {
         mIsExecuting = false;
-        // TODO read response
+
+        if(commandCode == BluetoothCommands.COMMAND_COORD) {
+
+            mCoordX = (((short)response[0]) << 8) | response[1];
+            mCoordY = (((short)response[2]) << 8) | response[3];
+            Log.d(TAG, mCoordX + ", " + mCoordY / BluetoothCommands.ROTATION_BYJ);
+
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    ((EditText)findViewById(R.id.input_x)).setText(String.valueOf(mCoordX));
+                    ((EditText)findViewById(R.id.input_y)).setText(String.valueOf(mCoordY));
+                    if(mCoordX < 0 && mCoordY > 0) {
+                        findViewById(R.id.fab).setEnabled(true);
+                    }
+                    enableUI(true);
+                }
+            });
+
+        }
+        else {
+            // ignore, it's only 0s
+        }
     }
 
     /* Listens to bluetooth turn on/off */
@@ -339,14 +361,12 @@ public class ControlActivity extends AppCompatActivity implements BluetoothConne
                     mConnected = true;
                     enableUI(true);
                     ControlActivity.this.findViewById(R.id.overlay).setVisibility(View.GONE);
-                    // TODO change connect button to red state
                     findViewById(R.id.btn_connect).setActivated(true);
                     break;
                 }
                 case BluetoothUtils.ACTION_HC05_DISCONNECTED: {
                     mConnected = false;
                     enableUI(false);
-                    // TODO change connect button to normal state
                     findViewById(R.id.btn_connect).setActivated(false);
                     break;
                 }
@@ -420,12 +440,35 @@ public class ControlActivity extends AppCompatActivity implements BluetoothConne
 
         @Override
         public void onClick(View v) {
+
             if (!mBluetoothService.isChannelOpen()) {
                 return;
             }
-            int steps = -1;
 
-            // TODO complete!!
+            int steps;
+            if (mUsingPixels) {
+                EditText input = findViewById(R.id.input_steps);
+
+                if (input.getText() == null || input.getText().toString().trim().equals("")) {
+                    input.setError("Set number between 0 and 32767");
+                    return;
+                }
+
+                try {
+                    steps = Integer.parseInt(input.getText().toString());
+                } catch (NumberFormatException e) {
+                    input.setError("Set number between 0 and 32767");
+                    return;
+                }
+                if (steps < 0 || steps > 32767) {
+                    input.setError("Set number between 0 and 32767");
+                    return;
+                }
+            }
+            else {
+                steps = ((ControlButton) v).getSteps();
+            }
+            mBluetoothService.sendInstruction(((ControlButton) v ).getCommand(), steps);
         }
     }
 }

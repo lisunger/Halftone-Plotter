@@ -139,7 +139,7 @@
             app:layout_constraintTop_toBottomOf="@+id/btn_rev_down" />
 
         <android.support.design.widget.TextInputLayout
-            android:id="@+id/input_steps"
+            android:id="@+id/input_layout_steps"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
@@ -148,6 +148,7 @@
             app:layout_constraintTop_toBottomOf="@+id/text1">
 
             <android.support.design.widget.TextInputEditText
+                android:id="@+id/input_steps"
                 android:layout_width="100dp"
                 android:layout_height="wrap_content"
                 android:hint="@string/lbl_steps"
@@ -161,9 +162,9 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:text="@string/lbl_precise_steps"
-            app:layout_constraintBottom_toBottomOf="@+id/input_steps"
-            app:layout_constraintStart_toEndOf="@+id/input_steps"
-            app:layout_constraintTop_toTopOf="@+id/input_steps" />
+            app:layout_constraintBottom_toBottomOf="@+id/input_layout_steps"
+            app:layout_constraintStart_toEndOf="@+id/input_layout_steps"
+            app:layout_constraintTop_toTopOf="@+id/input_layout_steps" />
 
         <Button
             android:id="@+id/btn_coord"
