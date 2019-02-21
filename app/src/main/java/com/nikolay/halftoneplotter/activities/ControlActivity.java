@@ -151,6 +151,10 @@ public class ControlActivity extends AppCompatActivity implements BluetoothConne
     }
 
     private void setUpUi() {
+        mInputX = findViewById(R.id.input_x);
+        mInputY = findViewById(R.id.input_y);
+        mFab = findViewById(R.id.fab);
+
         setButtonCommands();
         setButtonSteps();
         setButtonListeners();
@@ -158,10 +162,6 @@ public class ControlActivity extends AppCompatActivity implements BluetoothConne
         enableUI(false);
         setClickListeners();
         findViewById(R.id.overlay).setVisibility(View.GONE);
-
-        mInputX = findViewById(R.id.input_x);
-        mInputY = findViewById(R.id.input_y);
-        mFab = findViewById(R.id.fab);
     }
 
     private void enableUI(boolean enable) {
@@ -299,6 +299,7 @@ public class ControlActivity extends AppCompatActivity implements BluetoothConne
 
         (findViewById(R.id.btn_dot)).setOnClickListener(new ControlButtonClickListener());
 
+        // TODO fix
         mInputX.addTextChangedListener(new MyTextWatcher());
         mInputY.addTextChangedListener(new MyTextWatcher());
     }
@@ -314,8 +315,13 @@ public class ControlActivity extends AppCompatActivity implements BluetoothConne
 
         if(commandCode == BluetoothCommands.COMMAND_COORD) {
             // TODO parse correctly
-            mCoordX = (((short)response[0]) << 8) | response[1];
-            mCoordY = (((short)response[2]) << 8) | response[3];
+            mCoordX = 0;
+            mCoordY = 0;
+            mCoordX += (((int)response[0]) << 8);
+            mCoordX += response[1] & 0b11111111;
+            mCoordY += (((int)response[2]) << 8);
+            mCoordY += response[3] & 0b11111111;
+            mCoordY = (int) Math.round((double)mCoordY / BluetoothCommands.VALUE_DOWN);
             Log.d(TAG, mCoordX + ", " + mCoordY);
 
             runOnUiThread(new Runnable() {
