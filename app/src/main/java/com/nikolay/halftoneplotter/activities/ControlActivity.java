@@ -11,8 +11,11 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.widget.CheckBox;
@@ -48,6 +51,10 @@ public class ControlActivity extends AppCompatActivity implements BluetoothConne
     private BluetoothDevice mHc05device = null;
     private BluetoothConnectionService mBluetoothService = null;
     private BluetoothSocket mSocket;
+
+    private EditText mInputX;
+    private EditText mInputY;
+    private FloatingActionButton mFab;
 
 
     @Override
@@ -151,13 +158,17 @@ public class ControlActivity extends AppCompatActivity implements BluetoothConne
         enableUI(false);
         setClickListeners();
         findViewById(R.id.overlay).setVisibility(View.GONE);
+
+        mInputX = findViewById(R.id.input_x);
+        mInputY = findViewById(R.id.input_y);
+        mFab = findViewById(R.id.fab);
     }
 
     private void enableUI(boolean enable) {
         findViewById(R.id.input_layout_steps).setEnabled(enable);
-        findViewById(R.id.input_x).setEnabled(enable);
-        findViewById(R.id.input_y).setEnabled(enable);
-        findViewById(R.id.fab).setEnabled(enable);
+        mInputX.setEnabled(enable);
+        mInputY.setEnabled(enable);
+        mFab.setEnabled(enable);
         findViewById(R.id.chkbox_precise).setEnabled(enable);
         findViewById(R.id.btn_coord).setEnabled(enable);
         findViewById(R.id.btn_step_left).setEnabled(enable);
@@ -223,16 +234,15 @@ public class ControlActivity extends AppCompatActivity implements BluetoothConne
         });
 
 
-        // TODO getCoordinates button
         findViewById(R.id.btn_coord).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 enableUI(false);
-                mBluetoothService.sendInstruction(BluetoothCommands.COMMAND_COORD, 0);
+                mBluetoothService.sendInstruction(BluetoothCommands.COMMAND_COORD, BluetoothCommands.VALUE_DOT);
             }
         });
 
-        findViewById(R.id.fab).setOnClickListener(new View.OnClickListener() {
+        mFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 SharedPreferences sharedPref = ControlActivity.this.getPreferences(Context.MODE_PRIVATE);
@@ -288,10 +298,13 @@ public class ControlActivity extends AppCompatActivity implements BluetoothConne
         (findViewById(R.id.btn_rev_down)).setOnClickListener(new ControlButtonClickListener());
 
         (findViewById(R.id.btn_dot)).setOnClickListener(new ControlButtonClickListener());
+
+        mInputX.addTextChangedListener(new MyTextWatcher());
+        mInputY.addTextChangedListener(new MyTextWatcher());
     }
 
     private void setButtonColors() {
-        findViewById(R.id.fab).setBackgroundTintList(getResources().getColorStateList(R.color.colors_enable, getTheme()));
+        mFab.setBackgroundTintList(getResources().getColorStateList(R.color.colors_enable, getTheme()));
         findViewById(R.id.btn_coord).setBackgroundTintList(getResources().getColorStateList(R.color.colors_enable, getTheme()));
     }
 
@@ -300,18 +313,18 @@ public class ControlActivity extends AppCompatActivity implements BluetoothConne
         mIsExecuting = false;
 
         if(commandCode == BluetoothCommands.COMMAND_COORD) {
-
+            // TODO parse correctly
             mCoordX = (((short)response[0]) << 8) | response[1];
             mCoordY = (((short)response[2]) << 8) | response[3];
-            Log.d(TAG, mCoordX + ", " + mCoordY / BluetoothCommands.ROTATION_BYJ);
+            Log.d(TAG, mCoordX + ", " + mCoordY);
 
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    ((EditText)findViewById(R.id.input_x)).setText(String.valueOf(mCoordX));
-                    ((EditText)findViewById(R.id.input_y)).setText(String.valueOf(mCoordY));
+                    mInputX.setText(String.valueOf(mCoordX));
+                    mInputY.setText(String.valueOf(mCoordY));
                     if(mCoordX < 0 && mCoordY > 0) {
-                        findViewById(R.id.fab).setEnabled(true);
+                        mFab.setEnabled(true);
                     }
                     enableUI(true);
                 }
@@ -469,6 +482,32 @@ public class ControlActivity extends AppCompatActivity implements BluetoothConne
                 steps = ((ControlButton) v).getSteps();
             }
             mBluetoothService.sendInstruction(((ControlButton) v ).getCommand(), steps);
+        }
+    }
+
+    public class MyTextWatcher implements TextWatcher {
+
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+
+        @Override
+        public void afterTextChanged(Editable s) { }
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+            try {
+                int x = Integer.parseInt(mInputX.getText().toString());
+                int y = Integer.parseInt(mInputY.getText().toString());
+
+                if(x > 0 && y > 0 && x < 5000 && y < 5000) {
+                    mFab.setEnabled(true);
+                }
+                else {
+                    mFab.setEnabled(false);
+                }
+            } catch(NumberFormatException e) {
+                mFab.setEnabled(false);
+            }
         }
     }
 }
