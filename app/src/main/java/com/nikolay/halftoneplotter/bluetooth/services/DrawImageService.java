@@ -7,6 +7,7 @@ import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
@@ -16,9 +17,13 @@ import com.nikolay.halftoneplotter.R;
 import com.nikolay.halftoneplotter.activities.DrawActivity;
 import com.nikolay.halftoneplotter.bluetooth.BluetoothUtils;
 import com.nikolay.halftoneplotter.bluetooth.SocketContainer;
+import com.nikolay.halftoneplotter.utils.Instruction;
+import com.nikolay.halftoneplotter.utils.Utils;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URI;
+import java.util.List;
 
 public class DrawImageService extends IntentService {
 
@@ -49,7 +54,7 @@ public class DrawImageService extends IntentService {
         int x = sharedPref.getInt(getString(R.string.coordinate_x_key), -1);
         int y = sharedPref.getInt(getString(R.string.coordinate_y_key), -1);
 
-
+        List<Instruction> sequence = Utils.convertImageToInstructions(this, Uri.parse(uriString));
 
 
         // TODO everything

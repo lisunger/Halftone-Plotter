@@ -7,8 +7,12 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.provider.MediaStore;
 
+import com.nikolay.halftoneplotter.bluetooth.BluetoothCommands;
+
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Utils {
 
@@ -26,7 +30,7 @@ public class Utils {
         return path;
     }
 
-    public static Bitmap decodeImageFromUri(Context context, Uri uri) {
+    public static Bitmap decodeImageFromUri(Context context, Uri uri, boolean scale) {
         try {
             InputStream input = context.getContentResolver().openInputStream(uri);
 
@@ -80,5 +84,52 @@ public class Utils {
         else return k;
     }
 
+    public static List<Instruction> convertImageToInstructions(Context context, Uri uri) {
+        List<Instruction> instructions = new ArrayList<Instruction>();
 
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inScaled = false;
+        Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), imageId, options);
+        //Log.d("Lisko", String.format("%d x %d", bitmap.getWidth(), bitmap.getHeight()));
+
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
+        int[] pixels = new int[width * height];
+        bitmap.getPixels(pixels, 0, width, 0, 0, width, height);
+
+        // -16777216 = black; -1 = white
+        for(int i = 0; i < width * height; i++) {
+            int pixel = pixels[i];
+            if(pixel == -16777216) {
+                instructions.add(new Instruction(BluetoothCommands.COMMAND_DOT, BluetoothCommands.VALUE_DOT));
+            }
+            if((i % width) == (width - 1)) { // last pixel on the row
+                instructions.add(new Instruction(BluetoothCommands.COMMAND_UP, BluetoothCommands.VALUE_UP));
+                instructions.add(new Instruction(BluetoothCommands.COMMAND_LEFT, (width - 1) * BluetoothCommands.VALUE_LEFT));
+            }
+            else {
+                instructions.add(new Instruction(BluetoothCommands.COMMAND_RIGHT, BluetoothCommands.VALUE_RIGHT));
+            }
+        }
+
+        List<Instruction> finalSequence = new ArrayList<Instruction>();
+        int n = 0;
+        for(int i = 0; i < instructions.size(); i++) {
+            Instruction instruction = instructions.get(i);
+            if(instruction.getCommand() == BluetoothCommands.COMMAND_RIGHT) {
+                while(instructions.get(i + n).getCommand() == BluetoothCommands.COMMAND_RIGHT) {
+                    n++;
+                    if((i + n) >= instructions.size()) break;
+                }
+                finalSequence.add(new Instruction(BluetoothCommands.COMMAND_RIGHT, BluetoothCommands.VALUE_RIGHT * n));
+                i += (n - 1);
+                n = 0;
+            }
+            else {
+                finalSequence.add(instruction);
+            }
+        }
+
+        return instructions;
+    }
 }
