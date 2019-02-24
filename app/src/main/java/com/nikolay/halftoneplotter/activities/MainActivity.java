@@ -173,6 +173,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 editor.apply();
 
                 Intent intent = new Intent(MainActivity.this, ControlActivity.class);
+                intent.setFlags(intent.getFlags() | Intent.FLAG_ACTIVITY_NO_HISTORY);
                 startActivity(intent);
             }
         });

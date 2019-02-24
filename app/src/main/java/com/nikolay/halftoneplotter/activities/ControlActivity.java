@@ -45,9 +45,8 @@ public class ControlActivity extends AppCompatActivity implements BluetoothConne
     private boolean mScanning = false;
     private boolean mScanStartedByApp = false;
     private boolean mConnected = false;
-    private BluetoothAdapter mBluetoothAdapter;
-    private boolean mIsExecuting = false;
 
+    private BluetoothAdapter mBluetoothAdapter;
     private BluetoothDevice mHc05device = null;
     private BluetoothConnectionService mBluetoothService = null;
     private BluetoothSocket mSocket;
@@ -252,22 +251,26 @@ public class ControlActivity extends AppCompatActivity implements BluetoothConne
                 editor.putInt(getString(R.string.coordinate_y_key), mCoordY);
                 editor.apply();
 
-                unregisterReceiver(mBluetoothStateBroadcastReceiver);
-                unregisterReceiver(mConnectionStateReceiver);
-                unregisterReceiver(mDeviceFoundReceiver);
+//                unregisterReceiver(mBluetoothStateBroadcastReceiver);
+//                unregisterReceiver(mConnectionStateReceiver);
+//                unregisterReceiver(mDeviceFoundReceiver);
+
 //                try {
-//                    ControlActivity.this.unbindService(mConnection);
-//                    stopService(new Intent(ControlActivity.this, BluetoothConnectionService.class));
-//                    mSocket.close();
-//                } catch (IOException e) {
+                    //mBluetoothService.goForeground();
+                    //ControlActivity.this.unbindService(mConnection);
+                    //stopService(new Intent(ControlActivity.this, BluetoothConnectionService.class));
+                    //mSocket.close();
+                    //SocketContainer.setBluetoothSocket(null);
+//                }
+//                catch (IOException e) {
 //                    e.printStackTrace();
 //                    Log.d(TAG, "Cannot close connection");
 //                    finish();
 //                }
 
 
-                mBluetoothService.foreground();
                 Intent intent = new Intent(ControlActivity.this, DrawActivity.class);
+                intent.setFlags(intent.getFlags() | Intent.FLAG_ACTIVITY_NO_HISTORY);
                 startActivity(intent);
             }
         });
@@ -327,7 +330,6 @@ public class ControlActivity extends AppCompatActivity implements BluetoothConne
 
     @Override
     public void onInstructionExecuted(int commandCode, byte[] response) {
-        mIsExecuting = false;
 
         if(commandCode == BluetoothCommands.COMMAND_COORD) {
             // TODO parse correctly
@@ -461,7 +463,7 @@ public class ControlActivity extends AppCompatActivity implements BluetoothConne
         public void onServiceConnected(ComponentName name, IBinder service) {
             BluetoothConnectionService.LocalBinder binder = (BluetoothConnectionService.LocalBinder) service;
             mBluetoothService = binder.getService();
-            mBluetoothService.setBoundListener(ControlActivity.this);
+            mBluetoothService.setControlListener(ControlActivity.this);
             Log.d(TAG, "bound to service");
         }
 
@@ -474,13 +476,13 @@ public class ControlActivity extends AppCompatActivity implements BluetoothConne
     public class ControlButtonClickListener implements View.OnClickListener {
 
         @Override
-        public void onClick(View v) {
+        public void onClick(final View v) {
 
             if (!mBluetoothService.isChannelOpen()) {
                 return;
             }
 
-            int steps;
+            final int steps;
             if (mUsingPixels) {
                 EditText input = findViewById(R.id.input_steps);
 
@@ -503,7 +505,14 @@ public class ControlActivity extends AppCompatActivity implements BluetoothConne
             else {
                 steps = ((ControlButton) v).getSteps();
             }
-            mBluetoothService.sendInstruction(((ControlButton) v ).getCommand(), steps);
+
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    mBluetoothService.sendInstruction(((ControlButton) v ).getCommand(), steps);
+                }
+            }).start();
+
         }
     }
 

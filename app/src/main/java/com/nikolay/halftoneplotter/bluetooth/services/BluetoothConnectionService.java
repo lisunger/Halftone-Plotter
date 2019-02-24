@@ -4,7 +4,10 @@ import android.app.IntentService;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.bluetooth.BluetoothSocket;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
@@ -12,12 +15,16 @@ import android.widget.Toast;
 
 import com.nikolay.halftoneplotter.R;
 import com.nikolay.halftoneplotter.activities.ControlActivity;
+import com.nikolay.halftoneplotter.bluetooth.BluetoothCommands;
 import com.nikolay.halftoneplotter.bluetooth.BluetoothUtils;
 import com.nikolay.halftoneplotter.bluetooth.SocketContainer;
+import com.nikolay.halftoneplotter.utils.Instruction;
+import com.nikolay.halftoneplotter.utils.Utils;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.List;
 
 public class BluetoothConnectionService extends IntentService {
 
@@ -25,10 +32,15 @@ public class BluetoothConnectionService extends IntentService {
 
     private IBinder mBinder = new LocalBinder();
     private BluetoothSocket mBluetoothSocket;
-    private BluetoothResponseListener mBoundListener;
+    private BluetoothResponseListener mControlListener;
+    private DrawListener mDrawListener;
     private boolean mIsChannelOpen = true;
+    private boolean mStarted = false;
+    private boolean mPaused = false;
     private final int mDelay = 100;
     private int mCurrentCommandCode = -1;
+    private Uri mImageUri;
+    int[] mImageSize;
 
     public BluetoothConnectionService() {
         super("BluetoothConnectionService");
@@ -42,6 +54,7 @@ public class BluetoothConnectionService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
+        Log.d(TAG, "onHandleIntent thread: " + Thread.currentThread().getName());
         connectToHc05();
 
         InputStream readStream;
@@ -61,8 +74,8 @@ public class BluetoothConnectionService extends IntentService {
                 }
                 byte[] response = new byte[4];
                 readStream.read(response, 0, 4);
-                if(mBoundListener != null) {
-                    mBoundListener.onInstructionExecuted(mCurrentCommandCode, response);
+                if(mControlListener != null) {
+                    mControlListener.onInstructionExecuted(mCurrentCommandCode, response);
                 }
                 mIsChannelOpen = true;
 
@@ -86,7 +99,6 @@ public class BluetoothConnectionService extends IntentService {
                 // Send broadcast that the connection is established
                 Intent broadcast = new Intent(BluetoothUtils.ACTION_HC05_CONNECTED);
                 sendBroadcast(broadcast);
-                //startForeground(1, buildForegroundNotification());
             }
         } catch (IOException e) {
             Log.d(TAG, "Connection failed");
@@ -113,6 +125,10 @@ public class BluetoothConnectionService extends IntentService {
         Toast.makeText(this, "StartConnectionService destroyed", Toast.LENGTH_SHORT).show();
     }
 
+    public void goForeground() {
+        startForeground(1, buildForegroundNotification());
+    }
+
     private Notification buildForegroundNotification() {
         Intent notificationIntent = new Intent(this, ControlActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
@@ -126,7 +142,43 @@ public class BluetoothConnectionService extends IntentService {
         return notification;
     }
 
+    public void startDrawing() {
+        goForeground();
+        SharedPreferences sharedPref = this.getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
+        mImageUri = Uri.parse(sharedPref.getString(getString(R.string.image_uri_key), null));
+        mImageSize = Utils.getImageSizeFromUri(this, mImageUri);
+        if(mDrawListener != null) {
+            mDrawListener.onImageLoaded(mImageUri, mImageSize[0], mImageSize[1]);
+        }
+
+        List<Instruction> sequence = Utils.convertImageToInstructions(this, mImageUri, false);
+        Log.d(TAG, "Loaded sequence size: " + sequence.size());
+        if(mDrawListener != null) {
+            mDrawListener.onSequenceLoaded(sequence.size());
+        }
+
+        try {
+            while(!isChannelOpen()) {
+                Thread.sleep(mDelay);
+            }
+            goToCoords();
+
+            while(!isChannelOpen()) {
+                Thread.sleep(mDelay);
+            }
+            executeSequence(sequence);
+        } catch(InterruptedException e) {
+            Log.d(TAG, "Bluetooth connection error");
+            stopSelf();
+            e.printStackTrace();
+        }
+
+        stopForeground(true);
+        stopSelf();
+    }
+
     public void sendInstruction(int command, int value) {
+        Log.d(TAG, "sendInstruction thread: " + Thread.currentThread().getName());
         if(mIsChannelOpen) {
             try {
                 mIsChannelOpen = false;
@@ -154,6 +206,65 @@ public class BluetoothConnectionService extends IntentService {
         }
     }
 
+    private void goToCoords() {
+        SharedPreferences sharedPref = this.getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
+        int x = sharedPref.getInt(getString(R.string.coordinate_x_key), -1);
+        int y = sharedPref.getInt(getString(R.string.coordinate_y_key), -1);
+
+        int value = 0;
+        value |= x << 16;
+        value |= y;
+
+        sendInstruction(BluetoothCommands.COMMAND_GOTO, value);
+    }
+
+    private void executeSequence(List<Instruction> sequence) {
+
+        if(mDrawListener != null) {
+            mDrawListener.onDrawStarted();
+        }
+
+        int rowIndex = 0;
+        for (int index = 0; index < sequence.size(); index++) {
+
+            try {
+                while (!isChannelOpen() || mPaused) {
+                    Thread.sleep(mDelay);
+                }
+
+                if(index - 1 >= 0 && sequence.get(index - 1).getCommand() == BluetoothCommands.COMMAND_UP) {
+                    if (mDrawListener != null) {
+                        mDrawListener.onRowCompleted(rowIndex);
+                    }
+                    rowIndex++;
+                }
+
+                sendInstruction(sequence.get(index).getCommand(), sequence.get(index).getValue());
+
+            } catch (InterruptedException e) {
+                Log.d(TAG, "Bluetooth connection error");
+                stopSelf();
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void pauseDrawing() {
+        mPaused = true;
+
+        if (mDrawListener != null) {
+            mDrawListener.onDrawPaused();
+        }
+    }
+
+    public void resumeDrawing() {
+        mPaused = false;
+
+        if (mDrawListener != null) {
+            mDrawListener.onDrawResumed();
+        }
+    }
+
     @Override
     public IBinder onBind(Intent intent) {
         return mBinder;
@@ -165,15 +276,36 @@ public class BluetoothConnectionService extends IntentService {
         }
     }
 
-    public void setBoundListener(BluetoothResponseListener boundListener) {
-        this.mBoundListener = boundListener;
+    public void setControlListener(BluetoothResponseListener controlListener) {
+        this.mControlListener = controlListener;
+    }
+
+    public void setDrawListener(DrawListener drawListener) {
+        this.mDrawListener = drawListener;
     }
 
     public boolean isChannelOpen() {
         return mIsChannelOpen;
     }
 
+    public boolean isStarted() {
+        return mStarted;
+    }
+
+    public boolean isPaused() {
+        return mPaused;
+    }
+
     public interface BluetoothResponseListener {
         void onInstructionExecuted(int commandCode, byte[] response);
+    }
+
+    public interface DrawListener {
+        void onDrawStarted();
+        void onDrawPaused();
+        void onDrawResumed();
+        void onRowCompleted(int rowIndex);
+        void onImageLoaded(Uri uri, int width, int height);
+        void onSequenceLoaded(int sequenceSize);
     }
 }

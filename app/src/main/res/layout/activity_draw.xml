@@ -58,17 +58,21 @@
 
 
         <Button
-            android:id="@+id/buttonStartPause"
+            android:id="@+id/buttonPauseResume"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="@string/lbl_start" />
+            android:backgroundTint="@color/colorAccent"
+            android:elevation="3dp"
+            android:text="@string/lbl_pause" />
 
         <Button
             android:id="@+id/buttonStop"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:backgroundTint="@color/colorAccent"
+            android:elevation="3dp"
             android:text="@string/lbl_stop" />
     </LinearLayout>
 </LinearLayout>
