@@ -167,7 +167,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         mFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                SharedPreferences sharedPref = MainActivity.this.getPreferences(Context.MODE_PRIVATE);
+                SharedPreferences sharedPref = MainActivity.this.getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
                 SharedPreferences.Editor editor = sharedPref.edit();
                 editor.putString(getString(R.string.image_uri_key), mImageUri.toString());
                 editor.apply();
@@ -185,7 +185,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private void loadAndSetImage() {
-        mBitmap = Utils.decodeImageFromUri(this, mImageUri);
+        mBitmap = Utils.decodeImageFromUri(this, mImageUri, true);
         if(mBitmap != null) {
 
             int[] imageSize = Utils.getImageSizeFromUri(this, mImageUri);

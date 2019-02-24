@@ -22,19 +22,19 @@
         tools:ignore="GoogleAppIndexingWarning">
 
         <activity android:name=".activities.ControlActivity" android:parentActivityName=".activities.MainActivity">
-            <intent-filter>
+            <!--<intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+            </intent-filter>-->
         </activity>
 
         <activity android:name=".activities.DrawActivity" android:parentActivityName=".activities.ControlActivity"/>
 
         <activity android:name=".activities.MainActivity">
-            <!-- <intent-filter> -->
-            <!-- <action android:name="android.intent.action.MAIN" /> -->
-            <!-- <category android:name="android.intent.category.LAUNCHER" /> -->
-            <!-- </intent-filter> -->
+             <intent-filter>
+                 <action android:name="android.intent.action.MAIN" />
+                 <category android:name="android.intent.category.LAUNCHER" />
+             </intent-filter>
         </activity>
 
         <receiver

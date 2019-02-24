@@ -153,7 +153,7 @@ public class ControlActivity extends AppCompatActivity implements BluetoothConne
     private void setUpUi() {
         mInputX = findViewById(R.id.input_x);
         mInputY = findViewById(R.id.input_y);
-        mFab = findViewById(R.id.fab);
+        mFab = findViewById(R.id.fab2);
 
         setButtonCommands();
         setButtonSteps();
@@ -191,6 +191,7 @@ public class ControlActivity extends AppCompatActivity implements BluetoothConne
                     Log.d(TAG, "Bluetooth unplugged");
                     unbindService(mConnection);
                     stopService(new Intent(ControlActivity.this, BluetoothConnectionService.class));
+                    SocketContainer.setBluetoothSocket(null);
                     Intent broadcast = new Intent(BluetoothUtils.ACTION_HC05_DISCONNECTED);
                     sendBroadcast(broadcast);
                 }
@@ -251,6 +252,21 @@ public class ControlActivity extends AppCompatActivity implements BluetoothConne
                 editor.putInt(getString(R.string.coordinate_y_key), mCoordY);
                 editor.apply();
 
+                unregisterReceiver(mBluetoothStateBroadcastReceiver);
+                unregisterReceiver(mConnectionStateReceiver);
+                unregisterReceiver(mDeviceFoundReceiver);
+//                try {
+//                    ControlActivity.this.unbindService(mConnection);
+//                    stopService(new Intent(ControlActivity.this, BluetoothConnectionService.class));
+//                    mSocket.close();
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                    Log.d(TAG, "Cannot close connection");
+//                    finish();
+//                }
+
+
+                mBluetoothService.foreground();
                 Intent intent = new Intent(ControlActivity.this, DrawActivity.class);
                 startActivity(intent);
             }

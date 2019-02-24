@@ -28,7 +28,6 @@ public class BluetoothConnectionService extends IntentService {
     private BluetoothResponseListener mBoundListener;
     private boolean mIsChannelOpen = true;
     private final int mDelay = 100;
-    private boolean mStopListening = false;
     private int mCurrentCommandCode = -1;
 
     public BluetoothConnectionService() {
@@ -49,7 +48,7 @@ public class BluetoothConnectionService extends IntentService {
         try {
             readStream = mBluetoothSocket.getInputStream();
         } catch (IOException e) {
-            Log.d("Lisko", "Could not open input stream");
+            Log.d(TAG, "Could not open input stream");
             stopSelf();
             e.printStackTrace();
             return;
@@ -57,7 +56,7 @@ public class BluetoothConnectionService extends IntentService {
         // Do nothing while connection is active
         while(mBluetoothSocket.isConnected()) {
             try {
-                while(readStream.available() < 4 && !mStopListening) {
+                while(readStream.available() < 4) {
                     Thread.sleep(mDelay);
                 }
                 byte[] response = new byte[4];

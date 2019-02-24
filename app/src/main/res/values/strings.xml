@@ -20,6 +20,10 @@
     <string name="lbl_precise_steps">Use precise number</string>
     <string name="lbl_get_coords">Get coordinates</string>
     <string name="lbl_coords">Choose starting coordinates</string>
-    <string name="lbl_instruction">Connect to to the plotter device.\nMove the pen to a point.\nEnter coordinates manually or click \'Get coordinates\'</string>
+    <string name="lbl_instruction">Connect to the plotter device.\nMove the pen to a point.\nEnter coordinates manually or click \'Get coordinates\'</string>
     <string name="lbl_scanning">Scanning for plotter…</string>
+    <string name="lbl_start">Start</string>
+    <string name="lbl_stop">Stop</string>
+    <string name="lbl_pause">Pause</string>
+    <string name="lbl_resume">Resume</string>
 </resources>

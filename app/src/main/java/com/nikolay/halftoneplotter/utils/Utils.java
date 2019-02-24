@@ -1,11 +1,13 @@
 package com.nikolay.halftoneplotter.utils;
 
+import android.app.ActivityManager;
 import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.provider.MediaStore;
+import android.util.Log;
 
 import com.nikolay.halftoneplotter.bluetooth.BluetoothCommands;
 
@@ -44,13 +46,12 @@ public class Utils {
                 return null;
             }
 
-            int originalSize = (onlyBoundsOptions.outHeight > onlyBoundsOptions.outWidth) ? onlyBoundsOptions.outHeight : onlyBoundsOptions.outWidth;
-
-            double ratio = (originalSize > THUMBNAIL_SIZE) ? ((double)originalSize / THUMBNAIL_SIZE) : 1.0;
-
             BitmapFactory.Options bitmapOptions = new BitmapFactory.Options();
-            bitmapOptions.inSampleSize = getSampleRatio(ratio);
-            bitmapOptions.inPreferredConfig = Bitmap.Config.ARGB_8888;//
+            if(scale) {
+                int originalSize = (onlyBoundsOptions.outHeight > onlyBoundsOptions.outWidth) ? onlyBoundsOptions.outHeight : onlyBoundsOptions.outWidth;
+                double ratio = (originalSize > THUMBNAIL_SIZE) ? ((double) originalSize / THUMBNAIL_SIZE) : 1.0;
+                bitmapOptions.inSampleSize = getSampleRatio(ratio);
+            }
             input = context.getContentResolver().openInputStream(uri);
             Bitmap bitmap = BitmapFactory.decodeStream(input, null, bitmapOptions);
             input.close();
@@ -84,18 +85,17 @@ public class Utils {
         else return k;
     }
 
-    public static List<Instruction> convertImageToInstructions(Context context, Uri uri) {
+    public static List<Instruction> convertImageToInstructions(Context context, Uri uri, boolean uniteBlacks) {
         List<Instruction> instructions = new ArrayList<Instruction>();
 
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inScaled = false;
-        Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), imageId, options);
-        //Log.d("Lisko", String.format("%d x %d", bitmap.getWidth(), bitmap.getHeight()));
+        Bitmap bitmap = decodeImageFromUri(context, uri, false);
 
         int width = bitmap.getWidth();
         int height = bitmap.getHeight();
         int[] pixels = new int[width * height];
         bitmap.getPixels(pixels, 0, width, 0, 0, width, height);
+
+        // TODO unite black pixels??
 
         // -16777216 = black; -1 = white
         for(int i = 0; i < width * height; i++) {
@@ -130,6 +130,16 @@ public class Utils {
             }
         }
 
-        return instructions;
+        return finalSequence;
+    }
+
+    public static boolean isServiceRunning(Context context, Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
     }
 }

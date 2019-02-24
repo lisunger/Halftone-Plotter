@@ -15,12 +15,14 @@ import android.widget.Toast;
 
 import com.nikolay.halftoneplotter.R;
 import com.nikolay.halftoneplotter.activities.DrawActivity;
+import com.nikolay.halftoneplotter.bluetooth.BluetoothCommands;
 import com.nikolay.halftoneplotter.bluetooth.BluetoothUtils;
 import com.nikolay.halftoneplotter.bluetooth.SocketContainer;
 import com.nikolay.halftoneplotter.utils.Instruction;
 import com.nikolay.halftoneplotter.utils.Utils;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.util.List;
@@ -31,10 +33,12 @@ public class DrawImageService extends IntentService {
 
     private IBinder mBinder = new LocalBinder();
     private BluetoothSocket mBluetoothSocket;
-    private boolean mIsChannelOpen = true;
     private DrawListener mBoundListener;
-    private int mCurrentCommandCode = -1;
-    private boolean paused = false;
+    private Uri mImageUri;
+    private boolean mPaused = false;
+    private boolean mStopListening = false;
+    private final int mDelay = 100;
+    int[] mImageSize;
 
     @Override
     public void onCreate() {
@@ -46,24 +50,29 @@ public class DrawImageService extends IntentService {
         super("DrawImageService");
     }
 
-
     @Override
     protected void onHandleIntent(Intent intent) {
         SharedPreferences sharedPref = this.getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
-        String uriString = sharedPref.getString(getString(R.string.image_uri_key), null);
-        int x = sharedPref.getInt(getString(R.string.coordinate_x_key), -1);
-        int y = sharedPref.getInt(getString(R.string.coordinate_y_key), -1);
-
-        List<Instruction> sequence = Utils.convertImageToInstructions(this, Uri.parse(uriString));
-
-
-        // TODO everything
+        mImageUri = Uri.parse(sharedPref.getString(getString(R.string.image_uri_key), null));
+        mImageSize = Utils.getImageSizeFromUri(this, mImageUri);
+        if(mBoundListener != null) {
+            mBoundListener.onImageLoaded();
+        }
+        List<Instruction> sequence = Utils.convertImageToInstructions(this, mImageUri, false);
+        Log.d(TAG, "Loaded sequence size: " + sequence.size());
+        if(mBoundListener != null) {
+            mBoundListener.onSequenceLoaded(sequence.size());
+        }
         connectToHc05();
+        goToCoords();
+        executeSequence(sequence);
+
+        stopSelf();
     }
 
     private void connectToHc05() {
         try {
-            if(mBluetoothSocket != null) {
+            if (mBluetoothSocket != null) {
                 mBluetoothSocket.connect();
                 Log.d(TAG, "Connection successful");
                 // Send broadcast that the connection is established
@@ -78,11 +87,85 @@ public class DrawImageService extends IntentService {
         }
     }
 
+    private void goToCoords() {
+        SharedPreferences sharedPref = this.getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
+        int x = sharedPref.getInt(getString(R.string.coordinate_x_key), -1);
+        int y = sharedPref.getInt(getString(R.string.coordinate_y_key), -1);
+
+        InputStream readStream = getBluetoothStream();
+
+        int value = 0;
+        value |= x << 16;
+        value |= y;
+
+        sendInstruction(BluetoothCommands.COMMAND_GOTO, value);
+
+        try {
+            while (readStream.available() < 4 && !mStopListening) {
+                Thread.sleep(mDelay);
+            }
+            for (int i = 0; i < 4; i++) {
+                readStream.read();
+            }
+            readStream.close();
+
+        } catch (IOException e) {
+            Log.d(TAG, "Could not open input stream");
+            stopSelf();
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            Log.d(TAG, "Bluetooth connection error");
+            stopSelf();
+            e.printStackTrace();
+        }
+    }
+
+    private void executeSequence(List<Instruction> sequence) {
+
+        if(mBoundListener != null) {
+            mBoundListener.onDrawStarted();
+        }
+
+        InputStream readStream = getBluetoothStream();
+
+        int rowIndex = 0;
+        for (int index = 0; index < sequence.size(); index++) {
+
+            sendInstruction(sequence.get(index).getCommand(), sequence.get(index).getValue());
+
+            try {
+                while ((readStream.available() < 4 && !mStopListening) || mPaused) {
+                    Thread.sleep(mDelay);
+                }
+
+                // read all four bytes to free the stream
+                for (int i = 0; i < 4; i++) {
+                    readStream.read();
+                }
+
+                if (mBoundListener != null) {
+                    if (sequence.get(index).getCommand() == BluetoothCommands.COMMAND_UP)
+                        mBoundListener.onRowCompleted(rowIndex);
+                    rowIndex++;
+                }
+
+            } catch (IOException e) {
+                Log.d(TAG, "Could not open input stream");
+                stopSelf();
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                Log.d(TAG, "Bluetooth connection error");
+                stopSelf();
+                e.printStackTrace();
+            }
+        }
+    }
+
     @Override
     public void onDestroy() {
         super.onDestroy();
 
-        if(mBluetoothSocket != null) {
+        if (mBluetoothSocket != null) {
             try {
                 mBluetoothSocket.close();
             } catch (IOException e) {
@@ -110,30 +193,36 @@ public class DrawImageService extends IntentService {
     }
 
     private void sendInstruction(int command, int value) {
-        if(mIsChannelOpen) {
-            try {
-                mIsChannelOpen = false;
-                OutputStream writeStream = mBluetoothSocket.getOutputStream();
-                mCurrentCommandCode = command;
+        try {
+            OutputStream writeStream = mBluetoothSocket.getOutputStream();
 
-                // instruction beginning (four bytes)
-                writeStream.write(new byte[]{'n', 'i', 'k', 'i'});
+            // instruction beginning (four bytes)
+            writeStream.write(new byte[]{'n', 'i', 'k', 'i'});
 
-                // command (one byte)
-                writeStream.write(Integer.valueOf(command).byteValue());
+            // command (one byte)
+            writeStream.write(Integer.valueOf(command).byteValue());
 
-                // value (four bytes)
-                writeStream.write((value >> 24) & 0b11111111);
-                writeStream.write((value >> 16) & 0b11111111);
-                writeStream.write((value >> 8) & 0b11111111);
-                writeStream.write(value & 0b11111111);
+            // value (four bytes)
+            writeStream.write((value >> 24) & 0b11111111);
+            writeStream.write((value >> 16) & 0b11111111);
+            writeStream.write((value >> 8) & 0b11111111);
+            writeStream.write(value & 0b11111111);
 
-            } catch (IOException e) {
-                Log.d(TAG, "Could not send command");
-                // TODO scan if connected device is no longer there (powered off)
-                e.printStackTrace();
-                mIsChannelOpen = true;
-            }
+        } catch (IOException e) {
+            Log.d(TAG, "Could not send command");
+            // TODO scan if connected device is no longer there (powered off)
+            e.printStackTrace();
+        }
+    }
+
+    private InputStream getBluetoothStream() {
+        try {
+            return mBluetoothSocket.getInputStream();
+        } catch (IOException e) {
+            Log.d(TAG, "Could not open input stream");
+            stopSelf();
+            e.printStackTrace();
+            return null;
         }
     }
 
@@ -143,27 +232,20 @@ public class DrawImageService extends IntentService {
     }
 
     public void pauseDrawing() {
-        // TODO implement
+        mPaused = true;
 
-        if(mBoundListener != null) {
+        if (mBoundListener != null) {
             mBoundListener.onDrawPaused();
         }
     }
 
     public void resumeDrawing() {
-        // TODO implement
+        mPaused = false;
 
-        if(mBoundListener != null) {
+        if (mBoundListener != null) {
             mBoundListener.onDrawResumed();
         }
     }
-
-    private void rowCompleted() {
-        if(mBoundListener != null) {
-            mBoundListener.onRowCompleted();
-        }
-    }
-
 
     public class LocalBinder extends Binder {
         public DrawImageService getService() {
@@ -175,11 +257,29 @@ public class DrawImageService extends IntentService {
         this.mBoundListener = boundListener;
     }
 
+    public int getImageWidth() {
+        return mImageSize[0];
+    }
+
+    public int getImageHeight() {
+        return mImageSize[1];
+    }
+
+    public void setStopListening(boolean mStopListening) {
+        this.mStopListening = mStopListening;
+    }
+
+    public Uri getImageUri() {
+        return mImageUri;
+    }
+
     public interface DrawListener {
         void onDrawStarted();
         void onDrawPaused();
         void onDrawResumed();
-        void onRowCompleted();
+        void onRowCompleted(int rowIndex);
+        void onImageLoaded();
+        void onSequenceLoaded(int sequenceSize);
     }
 
 }
