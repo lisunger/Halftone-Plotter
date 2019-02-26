@@ -9,6 +9,7 @@ public class BluetoothCommands {
     public static final int COMMAND_STOP =  6;
     public static final int COMMAND_COORD = 7;
     public static final int COMMAND_GOTO = 8;
+    public static final int COMMAND_HELLO = 9;
 
     public static final int VALUE_UP =      35; // 1 degree rotation is 5.68 steps
     public static final int VALUE_DOWN =    35; // 1 degree rotation is 5.68 steps

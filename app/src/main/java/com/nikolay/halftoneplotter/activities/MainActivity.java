@@ -1,9 +1,7 @@
 package com.nikolay.halftoneplotter.activities;
 
 import android.Manifest;
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -19,6 +17,7 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -27,6 +26,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.nikolay.halftoneplotter.R;
+import com.nikolay.halftoneplotter.bluetooth.services.BluetoothConnectionService;
 import com.nikolay.halftoneplotter.utils.Utils;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
@@ -47,7 +47,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // TODO !!!check if the drawing service is running and switch to drawing activity!!!
+        if(Utils.isServiceRunning(this, BluetoothConnectionService.class)) {
+            Intent intent = new Intent(this, DrawActivity.class);
+            intent.setFlags(intent.getFlags() | Intent.FLAG_ACTIVITY_NO_HISTORY);
+            startActivity(intent);
+            finish();
+        }
 
         setContentView(R.layout.activity_main);
 
@@ -55,8 +60,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         setUpToolbars();
         loadUiElements();
-        loadImageIfAvailable();
     }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -87,6 +92,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 break;
             }
         }
+
+        ((DrawerLayout)findViewById(R.id.drawer_layout)).closeDrawer(Gravity.START, true);
         return true;
     }
 
@@ -167,22 +174,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         mFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                SharedPreferences sharedPref = MainActivity.this.getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
-                SharedPreferences.Editor editor = sharedPref.edit();
-                editor.putString(getString(R.string.image_uri_key), mImageUri.toString());
-                editor.apply();
+                Utils.setPreference(MainActivity.this, getString(R.string.image_uri_key), mImageUri.toString());
 
                 Intent intent = new Intent(MainActivity.this, ControlActivity.class);
                 intent.setFlags(intent.getFlags() | Intent.FLAG_ACTIVITY_NO_HISTORY);
                 startActivity(intent);
             }
         });
-    }
-
-    private void loadImageIfAvailable() {
-        if(mImageUri != null) {
-            loadAndSetImage();
-        }
     }
 
     private void loadAndSetImage() {

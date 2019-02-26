@@ -50,10 +50,6 @@
             android:name=".bluetooth.services.BluetoothConnectionService"
             android:exported="false"/>
 
-        <service
-            android:name=".bluetooth.services.DrawImageService"
-            android:exported="false" />
-
     </application>
 
 </manifest>

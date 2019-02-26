@@ -26,4 +26,5 @@
     <string name="lbl_stop">Stop</string>
     <string name="lbl_pause">Pause</string>
     <string name="lbl_resume">Resume</string>
+    <string name="lbl_not_responding">Plotter not responding.</string>
 </resources>

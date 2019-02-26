@@ -36,11 +36,14 @@ public class BluetoothConnectionService extends IntentService {
     private DrawListener mDrawListener;
     private boolean mIsChannelOpen = true;
     private boolean mStarted = false;
-    private boolean mPaused = false;
+    private boolean  mPaused = false;
     private final int mDelay = 100;
+    private final int mLongDelay = 1000;
     private int mCurrentCommandCode = -1;
     private Uri mImageUri;
     int[] mImageSize;
+    private boolean mCalledHello = false;
+    private boolean mHelloResponded = false;
 
     public BluetoothConnectionService() {
         super("BluetoothConnectionService");
@@ -62,18 +65,28 @@ public class BluetoothConnectionService extends IntentService {
             readStream = mBluetoothSocket.getInputStream();
         } catch (IOException e) {
             Log.d(TAG, "Could not open input stream");
+            mStarted = false;
             stopSelf();
             e.printStackTrace();
             return;
         }
+
         // Do nothing while connection is active
         while(mBluetoothSocket.isConnected()) {
             try {
+                while(isPaused()) {
+                    Thread.sleep(mLongDelay);
+                }
+
                 while(readStream.available() < 4) {
                     Thread.sleep(mDelay);
                 }
                 byte[] response = new byte[4];
                 readStream.read(response, 0, 4);
+                if(mCalledHello) {
+                    mHelloResponded = true;
+                }
+
                 if(mControlListener != null) {
                     mControlListener.onInstructionExecuted(mCurrentCommandCode, response);
                 }
@@ -119,6 +132,7 @@ public class BluetoothConnectionService extends IntentService {
                 e.printStackTrace();
             }
         }
+        Utils.clearPreferences(this);
         Intent broadcast = new Intent(BluetoothUtils.ACTION_HC05_DISCONNECTED);
         sendBroadcast(broadcast);
         Log.d(TAG, "StartConnectionService destroyed");
@@ -143,6 +157,7 @@ public class BluetoothConnectionService extends IntentService {
     }
 
     public void startDrawing() {
+        mStarted = true;
         goForeground();
         SharedPreferences sharedPref = this.getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
         mImageUri = Uri.parse(sharedPref.getString(getString(R.string.image_uri_key), null));
@@ -228,7 +243,10 @@ public class BluetoothConnectionService extends IntentService {
         for (int index = 0; index < sequence.size(); index++) {
 
             try {
-                while (!isChannelOpen() || mPaused) {
+                while(isPaused()) {
+                    Thread.sleep(mLongDelay);
+                }
+                while (!isChannelOpen()) {
                     Thread.sleep(mDelay);
                 }
 
@@ -243,14 +261,35 @@ public class BluetoothConnectionService extends IntentService {
 
             } catch (InterruptedException e) {
                 Log.d(TAG, "Bluetooth connection error");
+                mStarted = false;
                 stopSelf();
                 e.printStackTrace();
             }
         }
     }
 
+    private boolean callHello() {
+        mCalledHello = true;
+
+        for(int i = 0; i < 10; i++) {
+            if(mHelloResponded) {
+                mCalledHello = false;
+                mHelloResponded = false;
+                return true;
+            }
+            try {
+                Thread.sleep(mLongDelay);
+            } catch(InterruptedException e) {
+                Log.d(TAG, "Bluetooth connection error");
+                e.printStackTrace();
+                stopSelf();
+            }
+        }
+        return false;
+    }
+
     public void pauseDrawing() {
-        mPaused = true;
+        setPaused(true);
 
         if (mDrawListener != null) {
             mDrawListener.onDrawPaused();
@@ -258,7 +297,17 @@ public class BluetoothConnectionService extends IntentService {
     }
 
     public void resumeDrawing() {
-        mPaused = false;
+        if(callHello()) {
+            setPaused(false);
+        }
+        else {
+            Log.d(TAG, getString(R.string.lbl_not_responding));
+            if(mDrawListener != null) {
+                mDrawListener.onLostConnection();
+            }
+            stopForeground(true);
+            stopSelf();
+        }
 
         if (mDrawListener != null) {
             mDrawListener.onDrawResumed();
@@ -292,8 +341,12 @@ public class BluetoothConnectionService extends IntentService {
         return mStarted;
     }
 
-    public boolean isPaused() {
+    public synchronized boolean isPaused() {
         return mPaused;
+    }
+
+    public synchronized void setPaused(boolean paused) {
+        this.mPaused = paused;
     }
 
     public interface BluetoothResponseListener {
@@ -307,5 +360,6 @@ public class BluetoothConnectionService extends IntentService {
         void onRowCompleted(int rowIndex);
         void onImageLoaded(Uri uri, int width, int height);
         void onSequenceLoaded(int sequenceSize);
+        void onLostConnection();
     }
 }

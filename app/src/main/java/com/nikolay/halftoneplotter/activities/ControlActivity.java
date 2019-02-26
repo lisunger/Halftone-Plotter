@@ -8,7 +8,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.design.widget.FloatingActionButton;
@@ -29,6 +28,7 @@ import com.nikolay.halftoneplotter.bluetooth.BluetoothUtils;
 import com.nikolay.halftoneplotter.bluetooth.SocketContainer;
 import com.nikolay.halftoneplotter.bluetooth.services.BluetoothConnectionService;
 import com.nikolay.halftoneplotter.components.ControlButton;
+import com.nikolay.halftoneplotter.utils.Utils;
 
 import java.io.IOException;
 
@@ -245,29 +245,8 @@ public class ControlActivity extends AppCompatActivity implements BluetoothConne
         mFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                SharedPreferences sharedPref = ControlActivity.this.getPreferences(Context.MODE_PRIVATE);
-                SharedPreferences.Editor editor = sharedPref.edit();
-                editor.putInt(getString(R.string.coordinate_x_key), mCoordX);
-                editor.putInt(getString(R.string.coordinate_y_key), mCoordY);
-                editor.apply();
-
-//                unregisterReceiver(mBluetoothStateBroadcastReceiver);
-//                unregisterReceiver(mConnectionStateReceiver);
-//                unregisterReceiver(mDeviceFoundReceiver);
-
-//                try {
-                    //mBluetoothService.goForeground();
-                    //ControlActivity.this.unbindService(mConnection);
-                    //stopService(new Intent(ControlActivity.this, BluetoothConnectionService.class));
-                    //mSocket.close();
-                    //SocketContainer.setBluetoothSocket(null);
-//                }
-//                catch (IOException e) {
-//                    e.printStackTrace();
-//                    Log.d(TAG, "Cannot close connection");
-//                    finish();
-//                }
-
+                Utils.setPreference(ControlActivity.this, getString(R.string.coordinate_x_key), mCoordX);
+                Utils.setPreference(ControlActivity.this, getString(R.string.coordinate_y_key), mCoordY);
 
                 Intent intent = new Intent(ControlActivity.this, DrawActivity.class);
                 intent.setFlags(intent.getFlags() | Intent.FLAG_ACTIVITY_NO_HISTORY);

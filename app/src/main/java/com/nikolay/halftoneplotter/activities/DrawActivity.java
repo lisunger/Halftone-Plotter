@@ -1,36 +1,24 @@
 package com.nikolay.halftoneplotter.activities;
 
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothSocket;
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.net.Uri;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.nikolay.halftoneplotter.R;
-import com.nikolay.halftoneplotter.bluetooth.BluetoothStateChangeReceiver;
-import com.nikolay.halftoneplotter.bluetooth.BluetoothUtils;
-import com.nikolay.halftoneplotter.bluetooth.SocketContainer;
 import com.nikolay.halftoneplotter.bluetooth.services.BluetoothConnectionService;
-import com.nikolay.halftoneplotter.bluetooth.services.DrawImageService;
 import com.nikolay.halftoneplotter.utils.Utils;
-
-import java.io.IOException;
 
 public class DrawActivity extends AppCompatActivity
         implements BluetoothConnectionService.BluetoothResponseListener, BluetoothConnectionService.DrawListener {
@@ -84,7 +72,9 @@ public class DrawActivity extends AppCompatActivity
         mProgressBar.setProgress(0);
         mPercentView.setText("0%");
         mButtonPauseResume.setEnabled(false);
+        mButtonPauseResume.setText(R.string.lbl_start);
         mButtonStop.setEnabled(false);
+
 
         mButtonPauseResume.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -119,6 +109,7 @@ public class DrawActivity extends AppCompatActivity
                 mButtonPauseResume.setText(R.string.lbl_pause);
                 mTextBox.append("Drawing started.\n");
                 mExecuting = true;
+                mButtonStop.setEnabled(true);
             }
         });
     }
@@ -186,6 +177,16 @@ public class DrawActivity extends AppCompatActivity
         // TODO do smth
     }
 
+    @Override
+    public void onLostConnection() {
+        // TODO
+        Toast.makeText(this, "Lost connection with plotter.", Toast.LENGTH_LONG).show();
+        unbindService(mConnection);
+
+        Intent intent = new Intent(this, MainActivity.class);
+        startActivity(intent);
+    }
+
     private ServiceConnection mConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
@@ -196,7 +197,6 @@ public class DrawActivity extends AppCompatActivity
             mConnected = true;
 
             mButtonPauseResume.setEnabled(true);
-            mButtonStop.setEnabled(true);
             Log.d(TAG, "bound to service");
         }
 

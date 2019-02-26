@@ -2,13 +2,14 @@ package com.nikolay.halftoneplotter.utils;
 
 import android.app.ActivityManager;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.provider.MediaStore;
-import android.util.Log;
 
+import com.nikolay.halftoneplotter.R;
 import com.nikolay.halftoneplotter.bluetooth.BluetoothCommands;
 
 import java.io.IOException;
@@ -141,5 +142,28 @@ public class Utils {
             }
         }
         return false;
+    }
+
+    public static void setPreference(Context context, String key, String value) {
+        SharedPreferences sharedPref = context.getSharedPreferences(context.getString(R.string.preference_file_key), Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putString(key, value);
+        editor.apply();
+    }
+
+    public static void setPreference(Context context, String key, int value) {
+        SharedPreferences sharedPref = context.getSharedPreferences(context.getString(R.string.preference_file_key), Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putInt(key, value);
+        editor.apply();
+    }
+
+    public static void clearPreferences(Context context) {
+        SharedPreferences sharedPref = context.getSharedPreferences(context.getString(R.string.preference_file_key), Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.remove(context.getString(R.string.image_uri_key));
+        editor.remove(context.getString(R.string.coordinate_x_key));
+        editor.remove(context.getString(R.string.coordinate_y_key));
+        editor.apply();
     }
 }
