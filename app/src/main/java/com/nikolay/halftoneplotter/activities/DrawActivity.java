@@ -99,6 +99,15 @@ public class DrawActivity extends AppCompatActivity
                 }
             }
         });
+
+        mButtonStop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(mDrawService != null) {
+                    mDrawService.setStop(true);
+                }
+            }
+        });
     }
 
     @Override

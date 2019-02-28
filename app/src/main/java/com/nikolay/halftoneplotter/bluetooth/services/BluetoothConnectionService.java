@@ -14,7 +14,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.nikolay.halftoneplotter.R;
-import com.nikolay.halftoneplotter.activities.ControlActivity;
+import com.nikolay.halftoneplotter.activities.DrawActivity;
 import com.nikolay.halftoneplotter.bluetooth.BluetoothCommands;
 import com.nikolay.halftoneplotter.bluetooth.BluetoothUtils;
 import com.nikolay.halftoneplotter.bluetooth.SocketContainer;
@@ -44,6 +44,7 @@ public class BluetoothConnectionService extends IntentService {
     int[] mImageSize;
     private boolean mCalledHello = false;
     private boolean mHelloResponded = false;
+    private boolean mStop = false;
 
     public BluetoothConnectionService() {
         super("BluetoothConnectionService");
@@ -74,6 +75,10 @@ public class BluetoothConnectionService extends IntentService {
         // Do nothing while connection is active
         while(mBluetoothSocket.isConnected()) {
             try {
+
+                if(mStop) {
+                    break;
+                }
                 while(isPaused()) {
                     Thread.sleep(mLongDelay);
                 }
@@ -144,7 +149,7 @@ public class BluetoothConnectionService extends IntentService {
     }
 
     private Notification buildForegroundNotification() {
-        Intent notificationIntent = new Intent(this, ControlActivity.class);
+        Intent notificationIntent = new Intent(this, DrawActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
         Notification notification = new Notification.Builder(this)
                 .setContentTitle("Connected to Plotter")
@@ -269,6 +274,7 @@ public class BluetoothConnectionService extends IntentService {
     }
 
     private boolean callHello() {
+        sendInstruction(BluetoothCommands.COMMAND_HELLO, 0);
         mCalledHello = true;
 
         for(int i = 0; i < 10; i++) {
@@ -297,10 +303,8 @@ public class BluetoothConnectionService extends IntentService {
     }
 
     public void resumeDrawing() {
-        if(callHello()) {
-            setPaused(false);
-        }
-        else {
+        setPaused(false);
+        if(!callHello()) {
             Log.d(TAG, getString(R.string.lbl_not_responding));
             if(mDrawListener != null) {
                 mDrawListener.onLostConnection();
@@ -309,6 +313,7 @@ public class BluetoothConnectionService extends IntentService {
             stopSelf();
         }
 
+        //setPaused(false);
         if (mDrawListener != null) {
             mDrawListener.onDrawResumed();
         }
@@ -347,6 +352,9 @@ public class BluetoothConnectionService extends IntentService {
 
     public synchronized void setPaused(boolean paused) {
         this.mPaused = paused;
+    }
+    public void setStop(boolean stop) {
+        this.mStop = stop;
     }
 
     public interface BluetoothResponseListener {
